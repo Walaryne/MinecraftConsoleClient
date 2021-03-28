@@ -1,4 +1,4 @@
-using System;
+
 /*
  * http://tools.ietf.org/rfc/rfc2672.txt
  * 

@@ -26,7 +26,8 @@
 // ------------------------------------------------------------------
 
 using System;
-
+using System.IO;
+using Ionic.Crc;
 namespace Ionic.Zip
 {
     /// <summary>
@@ -64,7 +65,7 @@ namespace Ionic.Zip
 
         public static ZipCrypto ForWrite(string password)
         {
-            ZipCrypto z = new ZipCrypto();
+            var z = new ZipCrypto();
             if (password == null)
                 throw new BadPasswordException("This entry requires a password.");
             z.InitCipher(password);
@@ -74,10 +75,10 @@ namespace Ionic.Zip
 
         public static ZipCrypto ForRead(string password, ZipEntry e)
         {
-            System.IO.Stream s = e._archiveStream;
+            Stream s = e._archiveStream;
             e._WeakEncryptionHeader = new byte[12];
             byte[] eh = e._WeakEncryptionHeader;
-            ZipCrypto z = new ZipCrypto();
+            var z = new ZipCrypto();
 
             if (password == null)
                 throw new BadPasswordException("This entry requires a password.");
@@ -125,16 +126,12 @@ namespace Ionic.Zip
                 {
                     throw new BadPasswordException("The password did not match.");
                 }
-                else if (DecryptedHeader[11] != (byte)((e._TimeBlob >> 8) & 0xff))
+                if (DecryptedHeader[11] != (byte)((e._TimeBlob >> 8) & 0xff))
                 {
                     throw new BadPasswordException("The password did not match.");
                 }
 
                 // We have a good password.
-            }
-            else
-            {
-                // A-OK
             }
             return z;
         }
@@ -154,7 +151,7 @@ namespace Ionic.Zip
         {
             get
             {
-                UInt16 t = (UInt16)((UInt16)(_Keys[2] & 0xFFFF) | 2);
+                var t = (UInt16)((UInt16)(_Keys[2] & 0xFFFF) | 2);
                 return (byte)((t * (t ^ 1)) >> 8);
             }
         }
@@ -199,10 +196,10 @@ namespace Ionic.Zip
                 throw new ArgumentOutOfRangeException("length",
                                                       "Bad length during Decryption: the length parameter must be smaller than or equal to the size of the destination array.");
 
-            byte[] plainText = new byte[length];
-            for (int i = 0; i < length; i++)
+            var plainText = new byte[length];
+            for (var i = 0; i < length; i++)
             {
-                byte C = (byte)(cipherText[i] ^ MagicByte);
+                var C = (byte)(cipherText[i] ^ MagicByte);
                 UpdateKeys(C);
                 plainText[i] = C;
             }
@@ -231,8 +228,8 @@ namespace Ionic.Zip
                 throw new ArgumentOutOfRangeException("length",
                                                       "Bad length during Encryption: The length parameter must be smaller than or equal to the size of the destination array.");
 
-            byte[] cipherText = new byte[length];
-            for (int i = 0; i < length; i++)
+            var cipherText = new byte[length];
+            for (var i = 0; i < length; i++)
             {
                 byte C = plainText[i];
                 cipherText[i] = (byte)(plainText[i] ^ MagicByte);
@@ -295,7 +292,7 @@ namespace Ionic.Zip
         public void InitCipher(string passphrase)
         {
             byte[] p = SharedUtilities.StringToByteArray(passphrase);
-            for (int i = 0; i < passphrase.Length; i++)
+            for (var i = 0; i < passphrase.Length; i++)
                 UpdateKeys(p[i]);
         }
 
@@ -336,7 +333,7 @@ namespace Ionic.Zip
 
         // private fields for the crypto stuff:
         private UInt32[] _Keys = { 0x12345678, 0x23456789, 0x34567890 };
-        private Ionic.Crc.CRC32 crc32 = new Ionic.Crc.CRC32();
+        private CRC32 crc32 = new CRC32();
 
     }
 
@@ -350,18 +347,17 @@ namespace Ionic.Zip
     ///   A Stream for reading and concurrently decrypting data from a zip file,
     ///   or for writing and concurrently encrypting data to a zip file.
     /// </summary>
-    internal class ZipCipherStream : System.IO.Stream
+    internal class ZipCipherStream : Stream
     {
         private ZipCrypto _cipher;
-        private System.IO.Stream _s;
+        private Stream _s;
         private CryptoMode _mode;
 
         /// <summary>  The constructor. </summary>
         /// <param name="s">The underlying stream</param>
         /// <param name="mode">To either encrypt or decrypt.</param>
         /// <param name="cipher">The pre-initialized ZipCrypto object.</param>
-        public ZipCipherStream(System.IO.Stream s, ZipCrypto cipher, CryptoMode mode)
-            : base()
+        public ZipCipherStream(Stream s, ZipCrypto cipher, CryptoMode mode)
         {
             _cipher = cipher;
             _s = s;
@@ -376,10 +372,10 @@ namespace Ionic.Zip
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
-            byte[] db = new byte[count];
+            var db = new byte[count];
             int n = _s.Read(db, 0, count);
             byte[] decrypted = _cipher.DecryptMessage(db, n);
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 buffer[offset + i] = decrypted[i];
             }
@@ -401,7 +397,7 @@ namespace Ionic.Zip
             if (offset != 0)
             {
                 plaintext = new byte[count];
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     plaintext[i] = buffer[offset + i];
                 }
@@ -442,7 +438,7 @@ namespace Ionic.Zip
             get { throw new NotSupportedException(); }
             set { throw new NotSupportedException(); }
         }
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotSupportedException();
         }

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
-
+using MinecraftClient.Mapping;
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -15,11 +12,11 @@ namespace MinecraftClient.ChatBots
     {
         private Entity fishingRod;
         private Double fishingHookThreshold = 0.2;
-        private Location LastPos = new Location();
+        private Location LastPos;
         private DateTime CaughtTime = DateTime.Now;
         private bool inventoryEnabled;
-        private bool isFishing = false;
-        private int useItemCounter = 0;
+        private bool isFishing;
+        private int useItemCounter;
 
         public override void Initialize()
         {
@@ -141,11 +138,11 @@ namespace MinecraftClient.ChatBots
         {
             if (!inventoryEnabled)
                 return false;
-            int start = 36;
-            int end = 44;
-            Inventory.Container container = GetPlayerInventory();
+            var start = 36;
+            var end = 44;
+            Container container = GetPlayerInventory();
 
-            foreach (KeyValuePair<int, Item> a in container.Items)
+            foreach (var a in container.Items)
             {
                 if (a.Key < start || a.Key > end)
                     continue;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace MinecraftClient.ChatBots
+﻿namespace MinecraftClient.ChatBots
 {
     /// <summary>
     /// Allow to perform operations using whispers to the bot
@@ -17,7 +12,7 @@ namespace MinecraftClient.ChatBots
             string command = "", sender = "";
             if (IsPrivateMessage(text, ref command, ref sender) && Settings.Bots_Owners.Contains(sender.ToLower().Trim()))
             {
-                string response = "";
+                var response = "";
                 PerformInternalCommand(command, ref response);
                 if (response.Length > 0)
                 {

@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
-
+using MinecraftClient.Mapping;
 namespace MinecraftClient.Protocol
 {
     /// <summary>
@@ -104,10 +101,10 @@ namespace MinecraftClient.Protocol
         /// <summary>
         /// Called when the server sets the new location for the player
         /// </summary>
-        /// <param name="location">New location of the player</param>
-        /// <param name="yaw">New yaw</param>
-        /// <param name="pitch">New pitch</param>
-        void UpdateLocation(Location location, float yaw, float pitch);
+        /// <param name="newLocation">New location of the player</param>
+        /// <param name="locationYaw">New yaw</param>
+        /// <param name="locationPitch">New pitch</param>
+        void UpdateLocation(Location newLocation, float locationYaw, float locationPitch);
 
         /// <summary>
         /// This method is called when the connection has been lost

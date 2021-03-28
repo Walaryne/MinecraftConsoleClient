@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 {
     /// <summary>
@@ -38,7 +33,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 
         private Dictionary<PacketTypesOut, int> reverseMappingOut = new Dictionary<PacketTypesOut, int>();
 
-        private bool forgeEnabled = false;
+        private bool forgeEnabled;
 
         public PacketTypePalette()
         {
@@ -64,14 +59,13 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             {
                 return p;
             }
-            else if (forgeEnabled)
+            if (forgeEnabled)
             {
                 if (Settings.DebugMessages)
                     ConsoleIO.WriteLogLine("Ignoring unknown packet ID of 0x" + packetId.ToString("X2"));
                 return PacketTypesIn.Unknown;
             }
-            else
-                throw new KeyNotFoundException("Packet ID of 0x" + packetId.ToString("X2") + " doesn't exist!");
+            throw new KeyNotFoundException("Packet ID of 0x" + packetId.ToString("X2") + " doesn't exist!");
         }
 
         /// <summary>
@@ -96,14 +90,13 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             {
                 return p;
             }
-            else if (forgeEnabled)
+            if (forgeEnabled)
             {
                 if (Settings.DebugMessages)
                     ConsoleIO.WriteLogLine("Ignoring unknown packet ID of 0x" + packetId.ToString("X2"));
                 return PacketTypesOut.Unknown;
             }
-            else
-                throw new KeyNotFoundException("Packet ID of 0x" + packetId.ToString("X2") + " doesn't exist!");
+            throw new KeyNotFoundException("Packet ID of 0x" + packetId.ToString("X2") + " doesn't exist!");
         }
 
         /// <summary>
@@ -146,7 +139,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         /// <param name="enabled"></param>
         public void SetForgeEnabled(bool enabled)
         {
-            this.forgeEnabled = enabled;
+            forgeEnabled = enabled;
         }
     }
 }

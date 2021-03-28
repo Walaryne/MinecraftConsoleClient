@@ -1,9 +1,7 @@
-﻿using MinecraftClient.Inventory;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
+using MinecraftClient.Inventory;
 namespace MinecraftClient.ChatBots
 {
     class AutoDrop : ChatBot
@@ -17,7 +15,7 @@ namespace MinecraftClient.ChatBots
         private Mode dropMode = Mode.Include;
         private bool enable = true;
 
-        private int updateDebounce = 0;
+        private int updateDebounce;
         private int updateDebounceValue = 2;
         private int inventoryUpdated = -1;
 
@@ -40,9 +38,9 @@ namespace MinecraftClient.ChatBots
         /// <returns>Item type array</returns>
         private ItemType[] ItemListParser(string itemList)
         {
-            string trimed = new string(itemList.Where(c => !char.IsWhiteSpace(c)).ToArray());
+            var trimed = new string(itemList.Where(c => !char.IsWhiteSpace(c)).ToArray());
             string[] list = trimed.Split(',');
-            List<ItemType> result = new List<ItemType>();
+            var result = new List<ItemType>();
             foreach (string t in list)
             {
                 ItemType item;
@@ -77,10 +75,7 @@ namespace MinecraftClient.ChatBots
                                 itemList.Add(item);
                                 return Translations.Get("bot.autoDrop.added", item.ToString());
                             }
-                            else
-                            {
-                                return Translations.Get("bot.autoDrop.incorrect_name", args[1]);
-                            }
+                            return Translations.Get("bot.autoDrop.incorrect_name", args[1]);
                         }
                         else
                         {
@@ -97,15 +92,9 @@ namespace MinecraftClient.ChatBots
                                     itemList.Remove(item);
                                     return Translations.Get("bot.autoDrop.removed", item.ToString());
                                 }
-                                else
-                                {
-                                    return Translations.Get("bot.autoDrop.not_in_list");
-                                }
+                                return Translations.Get("bot.autoDrop.not_in_list");
                             }
-                            else
-                            {
-                                return Translations.Get("bot.autoDrop.incorrect_name", args[1]);
-                            }
+                            return Translations.Get("bot.autoDrop.incorrect_name", args[1]);
                         }
                         else
                         {
@@ -149,10 +138,7 @@ namespace MinecraftClient.ChatBots
                         return GetHelp();
                 }
             }
-            else
-            {
-                return GetHelp();
-            }
+            return GetHelp();
         }
 
         private string GetHelp()

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.IO;
-
+using System.Text.RegularExpressions;
 namespace MinecraftClient.Protocol.Session
 {
     [Serializable]
@@ -34,7 +32,7 @@ namespace MinecraftClient.Protocol.Session
             if (fields.Length < 4)
                 throw new InvalidDataException("Invalid string format");
 
-            SessionToken session = new SessionToken();
+            var session = new SessionToken();
             session.ID = fields[0];
             session.PlayerName = fields[1];
             session.PlayerID = fields[2];

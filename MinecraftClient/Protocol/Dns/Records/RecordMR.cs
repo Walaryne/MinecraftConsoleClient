@@ -1,4 +1,4 @@
-using System;
+
 /*
 3.3.8. MR RDATA format (EXPERIMENTAL)
 

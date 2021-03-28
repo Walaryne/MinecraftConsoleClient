@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MinecraftClient.Mapping;
-
 namespace MinecraftClient.Commands
 {
     public class Move : Command
@@ -22,12 +19,12 @@ namespace MinecraftClient.Commands
                 handler.SetTerrainEnabled(true);
                 return Translations.Get("cmd.move.enable");
             }
-            else if (argStr == "off")
+            if (argStr == "off")
             {
                 handler.SetTerrainEnabled(false);
                 return Translations.Get("cmd.move.disable");
             }
-            else if (handler.GetTerrainEnabled())
+            if (handler.GetTerrainEnabled())
             {
                 if (args.Length == 1)
                 {
@@ -48,25 +45,25 @@ namespace MinecraftClient.Commands
                         handler.MoveTo(Movement.Move(handler.GetCurrentLocation(), direction));
                         return Translations.Get("cmd.move.moving", argStr);
                     }
-                    else return Translations.Get("cmd.move.dir_fail");
+                    return Translations.Get("cmd.move.dir_fail");
                 }
-                else if (args.Length == 3)
+                if (args.Length == 3)
                 {
                     try
                     {
                         int x = int.Parse(args[0]);
                         int y = int.Parse(args[1]);
                         int z = int.Parse(args[2]);
-                        Location goal = new Location(x, y, z);
+                        var goal = new Location(x, y, z);
                         if (handler.MoveTo(goal))
                             return Translations.Get("cmd.move.walk", goal);
                         return Translations.Get("cmd.move.fail", goal);
                     }
                     catch (FormatException) { return GetCmdDescTranslated(); }
                 }
-                else return GetCmdDescTranslated();
+                return GetCmdDescTranslated();
             }
-            else return Translations.Get("extra.terrainandmovement_required");
+            return Translations.Get("extra.terrainandmovement_required");
         }
     }
 }

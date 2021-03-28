@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+using System.IO;
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -46,7 +43,7 @@ namespace MinecraftClient.ChatBots
                 LogToConsole("Saving Player List");
                 DateTime now = DateTime.Now;
                 string TimeStamp = "[" + now.Year + '/' + now.Month + '/' + now.Day + ' ' + now.Hour + ':' + now.Minute + ']';
-                System.IO.File.AppendAllText(file, TimeStamp + "\n" + GetVerbatim(text) + "\n\n");
+                File.AppendAllText(file, TimeStamp + "\n" + GetVerbatim(text) + "\n\n");
             }
         }
     }

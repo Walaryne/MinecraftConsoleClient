@@ -89,6 +89,8 @@
 
 
 using System;
+using System.IO;
+using System.Text;
 using Interop=System.Runtime.InteropServices;
 
 namespace Ionic.Zlib
@@ -263,14 +265,13 @@ namespace Ionic.Zlib
     /// A general purpose exception class for exceptions in the Zlib library.
     /// </summary>
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000E")]
-    public class ZlibException : System.Exception
+    public class ZlibException : Exception
     {
         /// <summary>
         /// The ZlibException class captures exception information generated
         /// by the Zlib library.
         /// </summary>
         public ZlibException()
-            : base()
         {
         }
 
@@ -278,7 +279,7 @@ namespace Ionic.Zlib
         /// This ctor collects a message attached to the exception.
         /// </summary>
         /// <param name="s">the message for the exception.</param>
-        public ZlibException(System.String s)
+        public ZlibException(String s)
             : base(s)
         {
         }
@@ -326,12 +327,12 @@ namespace Ionic.Zlib
         ///   count depending on the data available in the source TextReader. Returns -1
         ///   if the end of the stream is reached.
         /// </returns>
-        public static System.Int32 ReadInput(System.IO.TextReader sourceTextReader, byte[] target, int start, int count)
+        public static Int32 ReadInput(TextReader sourceTextReader, byte[] target, int start, int count)
         {
             // Returns 0 bytes if not enough space in target
             if (target.Length == 0) return 0;
 
-            char[] charArray = new char[target.Length];
+            var charArray = new char[target.Length];
             int bytesRead = sourceTextReader.Read(charArray, start, count);
 
             // Returns -1 if EOF
@@ -344,15 +345,15 @@ namespace Ionic.Zlib
         }
 
 
-        internal static byte[] ToByteArray(System.String sourceString)
+        internal static byte[] ToByteArray(String sourceString)
         {
-            return System.Text.UTF8Encoding.UTF8.GetBytes(sourceString);
+            return UTF8Encoding.UTF8.GetBytes(sourceString);
         }
 
 
         internal static char[] ToCharArray(byte[] byteArray)
         {
-            return System.Text.UTF8Encoding.UTF8.GetChars(byteArray);
+            return UTF8Encoding.UTF8.GetChars(byteArray);
         }
     }
 
@@ -381,7 +382,7 @@ namespace Ionic.Zlib
 
     internal sealed class StaticTree
     {
-        internal static readonly short[] lengthAndLiteralsTreeCodes = new short[] {
+        internal static readonly short[] lengthAndLiteralsTreeCodes = {
             12, 8, 140, 8, 76, 8, 204, 8, 44, 8, 172, 8, 108, 8, 236, 8,
             28, 8, 156, 8, 92, 8, 220, 8, 60, 8, 188, 8, 124, 8, 252, 8,
              2, 8, 130, 8, 66, 8, 194, 8, 34, 8, 162, 8, 98, 8, 226, 8,
@@ -420,7 +421,7 @@ namespace Ionic.Zlib
              3, 8, 131, 8, 67, 8, 195, 8, 35, 8, 163, 8, 99, 8, 227, 8
         };
 
-        internal static readonly short[] distTreeCodes = new short[] {
+        internal static readonly short[] distTreeCodes = {
             0, 5, 16, 5, 8, 5, 24, 5, 4, 5, 20, 5, 12, 5, 28, 5,
             2, 5, 18, 5, 10, 5, 26, 5, 6, 5, 22, 5, 14, 5, 30, 5,
             1, 5, 17, 5, 9, 5, 25, 5, 5, 5, 21, 5, 13, 5, 29, 5,
@@ -496,8 +497,8 @@ namespace Ionic.Zlib
             if (buf == null)
                 return 1;
 
-            uint s1 = (uint) (adler & 0xffff);
-            uint s2 = (uint) ((adler >> 16) & 0xffff);
+            uint s1 = adler & 0xffff;
+            uint s2 = (adler >> 16) & 0xffff;
 
             while (len > 0)
             {
@@ -536,7 +537,7 @@ namespace Ionic.Zlib
                 s1 %= BASE;
                 s2 %= BASE;
             }
-            return (uint)((s2 << 16) | s1);
+            return (s2 << 16) | s1;
         }
 #pragma warning restore 3001
 #pragma warning restore 3002

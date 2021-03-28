@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 using System.Collections.Specialized;
-using System.Net.Sockets;
-using MinecraftClient.Proxy;
+using System.IO;
 using System.Net.Security;
-
+using System.Net.Sockets;
+using System.Text;
+using MinecraftClient.Proxy;
 namespace MinecraftClient.Protocol
 {
     /// <summary>
@@ -93,7 +91,7 @@ namespace MinecraftClient.Protocol
         /// <returns></returns>
         private Response Send(string method, string body = "")
         {
-            List<string> requestMessage = new List<string>()
+            var requestMessage = new List<string>
             {
                 string.Format("{0} {1} {2}", method.ToUpper(), path, httpVersion) // Request line
             };
@@ -133,7 +131,7 @@ namespace MinecraftClient.Protocol
                 byte[] data = Encoding.ASCII.GetBytes(h);
                 stream.Write(data, 0, data.Length);
                 stream.Flush();
-                StreamReader sr = new StreamReader(stream);
+                var sr = new StreamReader(stream);
                 string rawResult = sr.ReadToEnd();
                 response = ParseResponse(rawResult);
                 try
@@ -155,23 +153,23 @@ namespace MinecraftClient.Protocol
         private Response ParseResponse(string raw)
         {
             int statusCode;
-            string responseBody = "";
-            NameValueCollection headers = new NameValueCollection();
-            NameValueCollection cookies = new NameValueCollection();
+            var responseBody = "";
+            var headers = new NameValueCollection();
+            var cookies = new NameValueCollection();
             if (raw.StartsWith("HTTP/1.1") || raw.StartsWith("HTTP/1.0"))
             {
-                Queue<string> msg = new Queue<string>(raw.Split(new string[] { "\r\n" }, StringSplitOptions.None));
+                var msg = new Queue<string>(raw.Split(new[] { "\r\n" }, StringSplitOptions.None));
                 statusCode = int.Parse(msg.Dequeue().Split(' ')[1]);
                 
                 while (msg.Peek() != "")
                 {
-                    string[] header = msg.Dequeue().Split(new char[] { ':' }, 2); // Split first ':' only
+                    string[] header = msg.Dequeue().Split(new[] { ':' }, 2); // Split first ':' only
                     string key = header[0].ToLower(); // Key is case-insensitive
                     string value = header[1];
                     if (key == "set-cookie")
                     {
-                        string[] cookie = value.Split(';'); // cookie options are ignored
-                        string[] tmp = cookie[0].Split(new char[] { '=' }, 2); // Split first '=' only
+                        string[] cookie = value.Split(';');               // cookie options are ignored
+                        string[] tmp = cookie[0].Split(new[] { '=' }, 2); // Split first '=' only
                         string cname = tmp[0].Trim();
                         string cvalue = tmp[1].Trim();
                         cookies.Add(cname, cvalue);
@@ -185,7 +183,7 @@ namespace MinecraftClient.Protocol
                 if (msg.Count > 0) 
                     responseBody = msg.Dequeue();
 
-                return new Response()
+                return new Response
                 {
                     StatusCode = statusCode,
                     Body = responseBody,
@@ -193,16 +191,13 @@ namespace MinecraftClient.Protocol
                     Cookies = cookies
                 };
             }
-            else
+            return new Response
             {
-                return new Response()
-                {
-                    StatusCode = 520, // 502 - Web Server Returned an Unknown Error
-                    Body = "",
-                    Headers = headers,
-                    Cookies = cookies
-                };
-            }
+                StatusCode = 520, // 502 - Web Server Returned an Unknown Error
+                Body = "",
+                Headers = headers,
+                Cookies = cookies
+            };
         }
 
         /// <summary>
@@ -218,7 +213,7 @@ namespace MinecraftClient.Protocol
                 var value = cookies[key];
                 sb.Append(string.Format("{0}={1}; ", key, value));
             }
-            string result = sb.ToString();
+            var result = sb.ToString();
             return result.Remove(result.Length - 2); // Remove "; " at the end
         }
 
@@ -238,7 +233,7 @@ namespace MinecraftClient.Protocol
             /// <returns></returns>
             public static Response Empty()
             {
-                return new Response()
+                return new Response
                 {
                     StatusCode = 204, // 204 - No content
                     Body = "",

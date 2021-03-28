@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Text;
-
 namespace MinecraftClient.Mapping.BlockPalettes
 {
     /// <summary>
@@ -33,11 +32,11 @@ namespace MinecraftClient.Mapping.BlockPalettes
         /// <returns>state => block name mappings</returns>
         public static void JsonToClass(string blocksJsonFile, string outputClass, string outputEnum = null)
         {
-            HashSet<int> knownStates = new HashSet<int>();
-            Dictionary<string, HashSet<int>> blocks = new Dictionary<string, HashSet<int>>();
+            var knownStates = new HashSet<int>();
+            var blocks = new Dictionary<string, HashSet<int>>();
 
             Json.JSONData palette = Json.ParseJson(File.ReadAllText(blocksJsonFile, Encoding.UTF8));
-            foreach (KeyValuePair<string, Json.JSONData> item in palette.Properties)
+            foreach (var item in palette.Properties)
             {
                 //minecraft:item_name => ItemName
                 string blockType = String.Concat(
@@ -62,8 +61,8 @@ namespace MinecraftClient.Mapping.BlockPalettes
                 }
             }
 
-            HashSet<string> materials = new HashSet<string>();
-            List<string> outFile = new List<string>();
+            var materials = new HashSet<string>();
+            var outFile = new List<string>();
             outFile.AddRange(new[] {
                 "using System;",
                 "using System.Collections.Generic;",
@@ -78,18 +77,18 @@ namespace MinecraftClient.Mapping.BlockPalettes
                 "        {",
             });
 
-            foreach (KeyValuePair<string, HashSet<int>> blockType in blocks)
+            foreach (var blockType in blocks)
             {
                 if (blockType.Value.Count > 0)
                 {
-                    List<int> idList = blockType.Value.ToList();
+                    var idList = blockType.Value.ToList();
                     string materialName = blockType.Key;
                     materials.Add(materialName);
 
                     if (idList.Count > 1)
                     {
                         idList.Sort();
-                        Queue<int> idQueue = new Queue<int>(idList);
+                        var idQueue = new Queue<int>(idList);
 
                         while (idQueue.Count > 0)
                         {

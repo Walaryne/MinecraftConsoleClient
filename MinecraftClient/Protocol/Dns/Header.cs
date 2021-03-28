@@ -1,9 +1,6 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
-
 namespace Heijden.DNS
 {
 	#region RFC specification
@@ -211,7 +208,7 @@ namespace Heijden.DNS
 		{
 			get
 			{
-				List<byte> data = new List<byte>();
+				var data = new List<byte>();
 				data.AddRange(WriteShort(ID));
 				data.AddRange(WriteShort(Flags));
 				data.AddRange(WriteShort(QDCOUNT));

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Linq;
 namespace MinecraftClient.Inventory
 {
     public static class ItemTypeExtensions
@@ -224,10 +220,9 @@ namespace MinecraftClient.Inventory
             };
             if (m.IsStackable())
                 return 64;
-            else if (t.Contains(m))
+            if (t.Contains(m))
                 return 16;
-            else
-                return 1;
+            return 1;
         }
     }
 }

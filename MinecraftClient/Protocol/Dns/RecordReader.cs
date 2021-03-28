@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 namespace Heijden.DNS
 {
 	public class RecordReader
@@ -37,8 +36,7 @@ namespace Heijden.DNS
 		{
 			if (m_Position >= m_Data.Length)
 				return 0;
-			else
-				return m_Data[m_Position++];
+			return m_Data[m_Position++];
 		}
 
 		public char ReadChar()
@@ -64,8 +62,8 @@ namespace Heijden.DNS
 
 		public string ReadDomainName()
 		{
-			StringBuilder name = new StringBuilder();
-			int length = 0;
+			var name = new StringBuilder();
+			var length = 0;
 
 			// get  the length of the first label
 			while ((length = ReadByte()) != 0)
@@ -74,7 +72,7 @@ namespace Heijden.DNS
 				if ((length & 0xc0) == 0xc0)
 				{
 					// work out the existing domain name, copy this pointer
-					RecordReader newRecordReader = new RecordReader(m_Data, (length & 0x3f) << 8 | ReadByte());
+					var newRecordReader = new RecordReader(m_Data, (length & 0x3f) << 8 | ReadByte());
 
 					name.Append(newRecordReader.ReadDomainName());
 					return name.ToString();
@@ -90,24 +88,23 @@ namespace Heijden.DNS
 			}
 			if (name.Length == 0)
 				return ".";
-			else
-				return name.ToString();
+			return name.ToString();
 		}
 
 		public string ReadString()
 		{
-			short length = this.ReadByte();
+			short length = ReadByte();
 
-			StringBuilder name = new StringBuilder();
-			for(int intI=0;intI<length;intI++)
+			var name = new StringBuilder();
+			for(var intI=0;intI<length;intI++)
 				name.Append(ReadChar());
 			return name.ToString();
 		}
 
 		public byte[] ReadBytes(int intLength)
 		{
-			List<byte> list = new List<byte>();
-			for(int intI=0;intI<intLength;intI++)
+			var list = new List<byte>();
+			for(var intI=0;intI<intLength;intI++)
 				list.Add(ReadByte());
 			return list.ToArray();
 		}

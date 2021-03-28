@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-//using System.Linq;
+using MinecraftClient.Mapping; //using System.Linq;
 //using System.Text;
-using MinecraftClient.Mapping;
 
 namespace MinecraftClient.Protocol.Handlers
 {
@@ -22,7 +21,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <param name="dataTypes">Minecraft Protocol Data Types</param>
         public Protocol18Terrain(int protocolVersion, DataTypes dataTypes, IMinecraftComHandler handler)
         {
-            this.protocolversion = protocolVersion;
+            protocolversion = protocolVersion;
             this.dataTypes = dataTypes;
             this.handler = handler;
         }
@@ -44,7 +43,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 // 1.9 and above chunk format
                 // Unloading chunks is handled by a separate packet
-                for (int chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
+                for (var chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
                 {
                     if ((chunkMask & (1 << chunkY)) != 0)
                     {
@@ -61,35 +60,35 @@ namespace MinecraftClient.Protocol.Handlers
 
                         // MC 1.9 to 1.12 will set palette length field to 0 when palette
                         // is not used, MC 1.13+ does not send the field at all in this case
-                        int paletteLength = 0; // Assume zero when length is absent
+                        var paletteLength = 0; // Assume zero when length is absent
                         if (usePalette || protocolversion < Protocol18Handler.MC113Version)
                             paletteLength = dataTypes.ReadNextVarInt(cache);
 
-                        int[] palette = new int[paletteLength];
-                        for (int i = 0; i < paletteLength; i++)
+                        var palette = new int[paletteLength];
+                        for (var i = 0; i < paletteLength; i++)
                         {
                             palette[i] = dataTypes.ReadNextVarInt(cache);
                         }
 
                         // Bit mask covering bitsPerBlock bits
                         // EG, if bitsPerBlock = 5, valueMask = 00011111 in binary
-                        uint valueMask = (uint)((1 << bitsPerBlock) - 1);
+                        var valueMask = (uint)((1 << bitsPerBlock) - 1);
 
                         // Block IDs are packed in the array of 64-bits integers
                         ulong[] dataArray = dataTypes.ReadNextULongArray(cache);
 
-                        Chunk chunk = new Chunk();
+                        var chunk = new Chunk();
 
                         if (dataArray.Length > 0)
                         {
-                            int longIndex = 0;
+                            var longIndex = 0;
                             int startOffset = 0 - bitsPerBlock;
 
-                            for (int blockY = 0; blockY < Chunk.SizeY; blockY++)
+                            for (var blockY = 0; blockY < Chunk.SizeY; blockY++)
                             {
-                                for (int blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
+                                for (var blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
                                 {
-                                    for (int blockX = 0; blockX < Chunk.SizeX; blockX++)
+                                    for (var blockX = 0; blockX < Chunk.SizeX; blockX++)
                                     {
                                         // NOTICE: In the future a single ushort may not store the entire block id;
                                         // the Block class may need to change if block state IDs go beyond 65535
@@ -97,7 +96,7 @@ namespace MinecraftClient.Protocol.Handlers
 
                                         // Calculate location of next block ID inside the array of Longs
                                         startOffset += bitsPerBlock;
-                                        bool overlap = false;
+                                        var overlap = false;
 
                                         if ((startOffset + bitsPerBlock) > 64)
                                         {
@@ -194,17 +193,17 @@ namespace MinecraftClient.Protocol.Handlers
                 else
                 {
                     //Load chunk data from the server
-                    for (int chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
+                    for (var chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
                     {
                         if ((chunkMask & (1 << chunkY)) != 0)
                         {
-                            Chunk chunk = new Chunk();
+                            var chunk = new Chunk();
 
                             //Read chunk data, all at once for performance reasons, and build the chunk object
-                            Queue<ushort> queue = new Queue<ushort>(dataTypes.ReadNextUShortsLittleEndian(Chunk.SizeX * Chunk.SizeY * Chunk.SizeZ, cache));
-                            for (int blockY = 0; blockY < Chunk.SizeY; blockY++)
-                                for (int blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
-                                    for (int blockX = 0; blockX < Chunk.SizeX; blockX++)
+                            var queue = new Queue<ushort>(dataTypes.ReadNextUShortsLittleEndian(Chunk.SizeX * Chunk.SizeY * Chunk.SizeZ, cache));
+                            for (var blockY = 0; blockY < Chunk.SizeY; blockY++)
+                                for (var blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
+                                    for (var blockX = 0; blockX < Chunk.SizeX; blockX++)
                                         chunk[blockX, blockY, blockZ] = new Block(queue.Dequeue());
 
                             //We have our chunk, save the chunk into the world
@@ -215,7 +214,7 @@ namespace MinecraftClient.Protocol.Handlers
                     }
 
                     //Skip light information
-                    for (int chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
+                    for (var chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
                     {
                         if ((chunkMask & (1 << chunkY)) != 0)
                         {
@@ -244,9 +243,9 @@ namespace MinecraftClient.Protocol.Handlers
                 else
                 {
                     //Count chunk sections
-                    int sectionCount = 0;
-                    int addDataSectionCount = 0;
-                    for (int chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
+                    var sectionCount = 0;
+                    var addDataSectionCount = 0;
+                    for (var chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
                     {
                         if ((chunkMask & (1 << chunkY)) != 0)
                             sectionCount++;
@@ -255,12 +254,12 @@ namespace MinecraftClient.Protocol.Handlers
                     }
 
                     //Read chunk data, unpacking 4-bit values into 8-bit values for block metadata
-                    Queue<byte> blockTypes = new Queue<byte>(dataTypes.ReadData(Chunk.SizeX * Chunk.SizeY * Chunk.SizeZ * sectionCount, cache));
-                    Queue<byte> blockMeta = new Queue<byte>();
+                    var blockTypes = new Queue<byte>(dataTypes.ReadData(Chunk.SizeX * Chunk.SizeY * Chunk.SizeZ * sectionCount, cache));
+                    var blockMeta = new Queue<byte>();
                     foreach (byte packed in dataTypes.ReadData((Chunk.SizeX * Chunk.SizeY * Chunk.SizeZ * sectionCount) / 2, cache))
                     {
-                        byte hig = (byte)(packed >> 4);
-                        byte low = (byte)(packed & (byte)0x0F);
+                        var hig = (byte)(packed >> 4);
+                        var low = (byte)(packed & 0x0F);
                         blockMeta.Enqueue(hig);
                         blockMeta.Enqueue(low);
                     }
@@ -274,15 +273,15 @@ namespace MinecraftClient.Protocol.Handlers
                         dataTypes.ReadData(Chunk.SizeX * Chunk.SizeZ, cache);                                         //Biomes
 
                     //Load chunk data
-                    for (int chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
+                    for (var chunkY = 0; chunkY < ChunkColumn.ColumnSize; chunkY++)
                     {
                         if ((chunkMask & (1 << chunkY)) != 0)
                         {
-                            Chunk chunk = new Chunk();
+                            var chunk = new Chunk();
 
-                            for (int blockY = 0; blockY < Chunk.SizeY; blockY++)
-                                for (int blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
-                                    for (int blockX = 0; blockX < Chunk.SizeX; blockX++)
+                            for (var blockY = 0; blockY < Chunk.SizeY; blockY++)
+                                for (var blockZ = 0; blockZ < Chunk.SizeZ; blockZ++)
+                                    for (var blockX = 0; blockX < Chunk.SizeX; blockX++)
                                         chunk[blockX, blockY, blockZ] = new Block(blockTypes.Dequeue(), blockMeta.Dequeue());
 
                             if (handler.GetWorld()[chunkX, chunkZ] == null)

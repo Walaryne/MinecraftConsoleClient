@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace MinecraftClient.ChatBots
+﻿namespace MinecraftClient.ChatBots
 {
     /// <summary>
     /// Example of message receiving.
@@ -13,8 +8,8 @@ namespace MinecraftClient.ChatBots
     {
         public override void GetText(string text)
         {
-            string message = "";
-            string username = "";
+            var message = "";
+            var username = "";
             text = GetVerbatim(text);
 
             if (IsPrivateMessage(text, ref message, ref username))

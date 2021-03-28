@@ -24,9 +24,8 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-
+using System.IO;
+using Ionic.Zlib;
 namespace Ionic.Zip
 {
     /// <summary>
@@ -80,7 +79,7 @@ namespace Ionic.Zip
     /// </code>
     /// </example>
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>
-    public delegate void WriteDelegate(string entryName, System.IO.Stream stream);
+    public delegate void WriteDelegate(string entryName, Stream stream);
 
 
     /// <summary>
@@ -98,7 +97,7 @@ namespace Ionic.Zip
     /// </remarks>
     ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
-    public delegate System.IO.Stream OpenDelegate(string entryName);
+    public delegate Stream OpenDelegate(string entryName);
 
     /// <summary>
     ///   Delegate in which the application closes the stream, just-in-time, for the named entry.
@@ -117,7 +116,7 @@ namespace Ionic.Zip
     /// </remarks>
     ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
-    public delegate void CloseDelegate(string entryName, System.IO.Stream stream);
+    public delegate void CloseDelegate(string entryName, Stream stream);
 
     /// <summary>
     ///   Delegate for the callback by which the application tells the
@@ -133,7 +132,7 @@ namespace Ionic.Zip
     /// </para>
     /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.SetCompression"/>
-    public delegate Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
+    public delegate CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
 
     /// <summary>
     ///   In an EventArgs type, indicates which sort of progress event is being
@@ -304,8 +303,8 @@ namespace Ionic.Zip
 
         internal ZipProgressEventArgs(string archiveName, ZipProgressEventType flavor)
         {
-            this._archiveName = archiveName;
-            this._flavor = flavor;
+            _archiveName = archiveName;
+            _flavor = flavor;
         }
 
         /// <summary>
@@ -481,9 +480,9 @@ namespace Ionic.Zip
         internal SaveProgressEventArgs(string archiveName, bool before, int entriesTotal, int entriesSaved, ZipEntry entry)
             : base(archiveName, (before) ? ZipProgressEventType.Saving_BeforeWriteEntry : ZipProgressEventType.Saving_AfterWriteEntry)
         {
-            this.EntriesTotal = entriesTotal;
-            this.CurrentEntry = entry;
-            this._entriesSaved = entriesSaved;
+            EntriesTotal = entriesTotal;
+            CurrentEntry = entry;
+            _entriesSaved = entriesSaved;
         }
 
         internal SaveProgressEventArgs() { }
@@ -545,10 +544,10 @@ namespace Ionic.Zip
         internal ExtractProgressEventArgs(string archiveName, bool before, int entriesTotal, int entriesExtracted, ZipEntry entry, string extractLocation)
             : base(archiveName, (before) ? ZipProgressEventType.Extracting_BeforeExtractEntry : ZipProgressEventType.Extracting_AfterExtractEntry)
         {
-            this.EntriesTotal = entriesTotal;
-            this.CurrentEntry = entry;
-            this._entriesExtracted = entriesExtracted;
-            this._target = extractLocation;
+            EntriesTotal = entriesTotal;
+            CurrentEntry = entry;
+            _entriesExtracted = entriesExtracted;
+            _target = extractLocation;
         }
 
         internal ExtractProgressEventArgs(string archiveName, ZipProgressEventType flavor)
@@ -666,7 +665,7 @@ namespace Ionic.Zip
         /// <summary>
         /// Returns the exception that occurred, if any.
         /// </summary>
-        public Exception @Exception
+        public Exception Exception
         {
             get { return _exc; }
         }

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.IO;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -46,7 +42,7 @@ namespace MinecraftClient.ChatBots
 
                     else //Using Console Prompt : Print text with alert highlighted
                     {
-                        string[] splitted = text.Split(new string[] { alert }, StringSplitOptions.None);
+                        string[] splitted = text.Split(new[] { alert }, StringSplitOptions.None);
 
                         ConsoleColor fore = Console.ForegroundColor;
                         ConsoleColor back = Console.BackgroundColor;
@@ -57,7 +53,7 @@ namespace MinecraftClient.ChatBots
                             Console.ForegroundColor = ConsoleColor.White;
                             ConsoleIO.Write(splitted[0]);
 
-                            for (int i = 1; i < splitted.Length; i++)
+                            for (var i = 1; i < splitted.Length; i++)
                             {
                                 Console.BackgroundColor = ConsoleColor.Yellow;
                                 Console.ForegroundColor = ConsoleColor.Red;

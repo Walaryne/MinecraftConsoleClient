@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+using MinecraftClient.Protocol;
 namespace MinecraftClient.Inventory
 {
     /// <summary>
@@ -33,9 +31,9 @@ namespace MinecraftClient.Inventory
         /// <param name="nbt">Item Metadata</param>
         public Item(ItemType itemType, int count, Dictionary<string, object> nbt)
         {
-            this.Type = itemType;
-            this.Count = count;
-            this.NBT = nbt;
+            Type = itemType;
+            Count = count;
+            NBT = nbt;
         }
 
         /// <summary>
@@ -62,9 +60,9 @@ namespace MinecraftClient.Inventory
                     var displayProperties = NBT["display"] as Dictionary<string, object>;
                     if (displayProperties != null && displayProperties.ContainsKey("Name"))
                     {
-                        string displayName = displayProperties["Name"] as string;
+                        var displayName = displayProperties["Name"] as string;
                         if (!String.IsNullOrEmpty(displayName))
-                            return MinecraftClient.Protocol.ChatParser.ParseText(displayProperties["Name"].ToString());
+                            return ChatParser.ParseText(displayProperties["Name"].ToString());
                     }
                 }
                 return null;
@@ -78,16 +76,16 @@ namespace MinecraftClient.Inventory
         {
             get
             {
-                List<string> lores = new List<string>();
+                var lores = new List<string>();
                 if (NBT != null && NBT.ContainsKey("display"))
                 {
                     var displayProperties = NBT["display"] as Dictionary<string, object>;
                     if (displayProperties != null && displayProperties.ContainsKey("Lore"))
                     {
-                        object[] displayName = displayProperties["Lore"] as object[];
+                        var displayName = displayProperties["Lore"] as object[];
                         foreach (string st in displayName)
                         {
-                            string str = MinecraftClient.Protocol.ChatParser.ParseText(st.ToString());
+                            string str = ChatParser.ParseText(st);
                             lores.Add(str);
                         }
                         return lores.ToArray();

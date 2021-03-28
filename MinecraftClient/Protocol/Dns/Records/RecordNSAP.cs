@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 /*
  * http://tools.ietf.org/rfc/rfc1348.txt  
@@ -46,9 +45,9 @@ namespace Heijden.DNS
 
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.AppendFormat("{0} ", LENGTH);
-			for (int intI = 0; intI < NSAPADDRESS.Length; intI++)
+			for (var intI = 0; intI < NSAPADDRESS.Length; intI++)
 				sb.AppendFormat("{0:X00}", NSAPADDRESS[intI]);
 			return sb.ToString();
 		}

@@ -1,5 +1,3 @@
-using System;
-
 #region Rfc info
 /*
 3.3.14. TXT RDATA format

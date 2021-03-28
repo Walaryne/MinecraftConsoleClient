@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.Mapping
 {
     /// <summary>
@@ -169,9 +165,9 @@ namespace MinecraftClient.Mapping
                 return false;
             if (obj is Location)
             {
-                return ((int)this.X) == ((int)((Location)obj).X)
-                    && ((int)this.Y) == ((int)((Location)obj).Y)
-                    && ((int)this.Z) == ((int)((Location)obj).Z);
+                return ((int)X) == ((int)((Location)obj).X)
+                    && ((int)Y) == ((int)((Location)obj).Y)
+                    && ((int)Z) == ((int)((Location)obj).Z);
             }
             return false;
         }

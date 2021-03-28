@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.Protocol
 {
     public static class GuidExtensions
@@ -15,9 +11,9 @@ namespace MinecraftClient.Protocol
         /// </summary>
         public static Guid ToLittleEndian(this Guid javaGuid)
         {
-            byte[] net = new byte[16];
+            var net = new byte[16];
             byte[] java = javaGuid.ToByteArray();
-            for (int i = 8; i < 16; i++)
+            for (var i = 8; i < 16; i++)
             {
                 net[i] = java[i];
             }
@@ -37,9 +33,9 @@ namespace MinecraftClient.Protocol
         /// </summary>
         public static Guid ToBigEndian(this Guid netGuid)
         {
-            byte[] java = new byte[16];
+            var java = new byte[16];
             byte[] net = netGuid.ToByteArray();
-            for (int i = 8; i < 16; i++)
+            for (var i = 8; i < 16; i++)
             {
                 java[i] = net[i];
             }
@@ -59,9 +55,9 @@ namespace MinecraftClient.Protocol
         /// </summary>
         public static byte[] ToBigEndianBytes(this Guid netGuid)
         {
-            byte[] java = new byte[16];
+            var java = new byte[16];
             byte[] net = netGuid.ToByteArray();
-            for (int i = 8; i < 16; i++)
+            for (var i = 8; i < 16; i++)
             {
                 java[i] = net[i];
             }

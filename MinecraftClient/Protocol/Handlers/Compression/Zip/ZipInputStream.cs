@@ -30,11 +30,9 @@
 //
 
 using System;
-using System.Threading;
-using System.Collections.Generic;
 using System.IO;
-using Ionic.Zip;
-
+using System.Text;
+using Ionic.Crc;
 namespace  Ionic.Zip
 {
     /// <summary>
@@ -344,7 +342,7 @@ namespace  Ionic.Zip
             if (!_inputStream.CanRead)
                 throw new ZipException("The stream must be readable.");
             _container= new ZipContainer(this);
-            _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
+            _provisionalAlternateEncoding = Encoding.GetEncoding("IBM437");
             _leaveUnderlyingStreamOpen = leaveOpen;
             _findRequired= true;
             _name = name ?? "(stream)";
@@ -416,7 +414,7 @@ namespace  Ionic.Zip
         /// </para>
         ///
         /// </remarks>
-        public System.Text.Encoding ProvisionalAlternateEncoding
+        public Encoding ProvisionalAlternateEncoding
         {
             get
             {
@@ -506,7 +504,7 @@ namespace  Ionic.Zip
                 if (_closed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
                 _Password = value;
             }
@@ -560,7 +558,7 @@ namespace  Ionic.Zip
             if (_closed)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("The stream has been closed.");
+                throw new InvalidOperationException("The stream has been closed.");
             }
 
             if (_needSetup)
@@ -579,7 +577,7 @@ namespace  Ionic.Zip
                 _currentEntry.VerifyCrcAfterExtract(CrcResult);
                 _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+                SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
 
             return n;
@@ -631,7 +629,7 @@ namespace  Ionic.Zip
                 // back up 4 bytes: ReadEntry assumes the file pointer is positioned before the entry signature
                 _inputStream.Seek(-4, SeekOrigin.Current);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+                SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
             // workitem 10923
             else if (_firstEntry)
@@ -639,7 +637,7 @@ namespace  Ionic.Zip
                 // we've already read one entry.
                 // Seek to the end of it.
                 _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+                SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
 
             _currentEntry = ZipEntry.ReadEntry(_container, !_firstEntry);
@@ -790,7 +788,7 @@ namespace  Ionic.Zip
             _findRequired= true;
             var x = _inputStream.Seek(offset, origin);
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+            SharedUtilities.Workaround_Ladybug318918(_inputStream);
             return x;
         }
 
@@ -805,12 +803,12 @@ namespace  Ionic.Zip
 
 
         private Stream _inputStream;
-        private System.Text.Encoding _provisionalAlternateEncoding;
+        private Encoding _provisionalAlternateEncoding;
         private ZipEntry _currentEntry;
         private bool _firstEntry;
         private bool _needSetup;
         private ZipContainer _container;
-        private Ionic.Crc.CrcCalculatorStream _crcStream;
+        private CrcCalculatorStream _crcStream;
         private Int64 _LeftToRead;
         internal String _Password;
         private Int64 _endOfEntry;

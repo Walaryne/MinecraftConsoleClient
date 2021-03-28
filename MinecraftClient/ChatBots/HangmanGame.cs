@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -11,11 +10,11 @@ namespace MinecraftClient.ChatBots
 
     public class HangmanGame : ChatBot
     {
-        private int vie = 0;
+        private int vie;
         private int vie_param = 10;
-        private int compteur = 0;
+        private int compteur;
         private int compteur_param = 3000; //5 minutes
-        private bool running = false;
+        private bool running;
         private bool[] discovered;
         private string word = "";
         private string letters = "";
@@ -50,8 +49,8 @@ namespace MinecraftClient.ChatBots
 
         public override void GetText(string text)
         {
-            string message = "";
-            string username = "";
+            var message = "";
+            var username = "";
             text = GetVerbatim(text);
 
             if (IsPrivateMessage(text, ref message, ref username))
@@ -65,8 +64,6 @@ namespace MinecraftClient.ChatBots
                             break;
                         case "stop":
                             running = false;
-                            break;
-                        default:
                             break;
                     }
                 }
@@ -91,7 +88,7 @@ namespace MinecraftClient.ChatBots
 
                                 if (word.Contains(letter))
                                 {
-                                    for (int i = 0; i < word.Length; i++) { if (word[i] == letter) { discovered[i] = true; } }
+                                    for (var i = 0; i < word.Length; i++) { if (word[i] == letter) { discovered[i] = true; } }
                                     SendText(English ? ("Yes, the word contains a " + letter + '!') : ("Le " + letter + " figurait bien dans le mot :)"));
                                 }
                                 else
@@ -141,24 +138,21 @@ namespace MinecraftClient.ChatBots
 
         private string chooseword()
         {
-            if (System.IO.File.Exists(English ? Settings.Hangman_FileWords_EN : Settings.Hangman_FileWords_FR))
+            if (File.Exists(English ? Settings.Hangman_FileWords_EN : Settings.Hangman_FileWords_FR))
             {
-                string[] dico = System.IO.File.ReadAllLines(English ? Settings.Hangman_FileWords_EN : Settings.Hangman_FileWords_FR, Encoding.UTF8);
+                string[] dico = File.ReadAllLines(English ? Settings.Hangman_FileWords_EN : Settings.Hangman_FileWords_FR, Encoding.UTF8);
                 return dico[new Random().Next(dico.Length)];
             }
-            else
-            {
-                LogToConsole(English ? "File not found: " + Settings.Hangman_FileWords_EN : "Fichier introuvable : " + Settings.Hangman_FileWords_FR);
-                return English ? "WORDSAREMISSING" : "DICOMANQUANT";
-            }
+            LogToConsole(English ? "File not found: " + Settings.Hangman_FileWords_EN : "Fichier introuvable : " + Settings.Hangman_FileWords_FR);
+            return English ? "WORDSAREMISSING" : "DICOMANQUANT";
         }
 
         private string word_cached
         {
             get
             {
-                string printed = "";
-                for (int i = 0; i < word.Length; i++)
+                var printed = "";
+                for (var i = 0; i < word.Length; i++)
                 {
                     if (discovered[i])
                     {
@@ -174,7 +168,7 @@ namespace MinecraftClient.ChatBots
         {
             get
             {
-                for (int i = 0; i < discovered.Length; i++)
+                for (var i = 0; i < discovered.Length; i++)
                 {
                     if (!discovered[i])
                     {

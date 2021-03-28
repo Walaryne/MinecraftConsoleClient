@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-
+using System.Text;
+using System.Text.RegularExpressions;
 namespace MinecraftClient
 {
     /// <summary>
@@ -33,7 +32,7 @@ namespace MinecraftClient
                 {
                     return string.Format(translations[msgName], args);
                 }
-                else return translations[msgName];
+                return translations[msgName];
             }
             return msgName.ToUpper();
         }
@@ -49,7 +48,7 @@ namespace MinecraftClient
         {
             if (translations.ContainsKey(msgName))
                 return Get(msgName, args);
-            else return msgName;
+            return msgName;
         }
 
         /// <summary>
@@ -64,10 +63,10 @@ namespace MinecraftClient
         /// <returns>Translated sentence</returns>
         public static string Replace(string msg, params object[] args)
         {
-            string translated = translationKeyRegex.Replace(msg, new MatchEvaluator(ReplaceKey));
+            string translated = translationKeyRegex.Replace(msg, ReplaceKey);
             if (args.Length > 0)
                 return string.Format(translated, args);
-            else return translated;
+            return translated;
         }
 
         private static string ReplaceKey(Match m)
@@ -129,16 +128,12 @@ namespace MinecraftClient
                 ParseTranslationContent(File.ReadAllLines(langFileConfigLanguage));
                 return;
             }
-            else
-            {
-                if (Settings.DebugMessages)
-                    ConsoleIO.WriteLogLine("[Translations] No translation file found for " + language + ". (Looked '" + langFileConfigLanguage + "'");
-            }
+            if (Settings.DebugMessages)
+                ConsoleIO.WriteLogLine("[Translations] No translation file found for " + language + ". (Looked '" + langFileConfigLanguage + "'");
 
             if (File.Exists(langFileSystemLanguage))
             {// Fallback to system language
                 ParseTranslationContent(File.ReadAllLines(langFileSystemLanguage));
-                return;
             }
             else
             {

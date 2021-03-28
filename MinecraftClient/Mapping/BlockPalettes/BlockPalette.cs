@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Mapping.BlockPalettes
 {
     public abstract class BlockPalette
@@ -20,7 +16,7 @@ namespace MinecraftClient.Mapping.BlockPalettes
         /// <returns>Material corresponding to the specified ID</returns>
         public Material FromId(int id)
         {
-            Dictionary<int, Material> materials = GetDict();
+            var materials = GetDict();
             if (materials.ContainsKey(id))
                 return materials[id];
             return Material.Air;

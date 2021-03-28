@@ -1,7 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using MinecraftClient.Crypto;
-
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -11,7 +11,7 @@ namespace MinecraftClient.Protocol.Handlers
     {
         TcpClient c;
         IAesStream s;
-        bool encrypted = false;
+        bool encrypted;
 
         /// <summary>
         /// Initialize a new SocketWrapper
@@ -19,7 +19,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <param name="client">TcpClient connected to the server</param>
         public SocketWrapper(TcpClient client)
         {
-            this.c = client;
+            c = client;
         }
 
         /// <summary>
@@ -49,8 +49,8 @@ namespace MinecraftClient.Protocol.Handlers
         {
             if (encrypted)
                 throw new InvalidOperationException("Stream is already encrypted!?");
-            this.s = CryptoHandler.getAesStream(c.GetStream(), secretKey);
-            this.encrypted = true;
+            s = CryptoHandler.getAesStream(c.GetStream(), secretKey);
+            encrypted = true;
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// </summary>
         private void Receive(byte[] buffer, int start, int offset, SocketFlags f)
         {
-            int read = 0;
+            var read = 0;
             while (read < offset)
             {
                 if (encrypted)
@@ -78,7 +78,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             if (length > 0)
             {
-                byte[] cache = new byte[length];
+                var cache = new byte[length];
                 Receive(cache, 0, length, SocketFlags.None);
                 return cache;
             }
@@ -108,7 +108,7 @@ namespace MinecraftClient.Protocol.Handlers
                 c.Close();
             }
             catch (SocketException) { }
-            catch (System.IO.IOException) { }
+            catch (IOException) { }
             catch (NullReferenceException) { }
             catch (ObjectDisposedException) { }
         }

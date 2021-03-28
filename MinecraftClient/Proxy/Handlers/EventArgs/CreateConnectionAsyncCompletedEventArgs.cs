@@ -24,9 +24,8 @@
  */
 
 using System;
-using System.Net.Sockets;
 using System.ComponentModel;
-
+using System.Net.Sockets;
 namespace Starksoft.Net.Proxy
 {
     /// <summary>

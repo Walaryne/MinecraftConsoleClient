@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
-
+using System.Threading;
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -45,13 +44,13 @@ namespace MinecraftClient.ChatBots
             }
             else
             {
-                if (System.IO.File.Exists(Settings.AutoRelog_KickMessagesFile))
+                if (File.Exists(Settings.AutoRelog_KickMessagesFile))
                 {
-                    LogDebugToConsoleTranslated("bot.autoRelog.loading", System.IO.Path.GetFullPath(Settings.AutoRelog_KickMessagesFile));
+                    LogDebugToConsoleTranslated("bot.autoRelog.loading", Path.GetFullPath(Settings.AutoRelog_KickMessagesFile));
 
-                    dictionary = System.IO.File.ReadAllLines(Settings.AutoRelog_KickMessagesFile, Encoding.UTF8);
+                    dictionary = File.ReadAllLines(Settings.AutoRelog_KickMessagesFile, Encoding.UTF8);
 
-                    for (int i = 0; i < dictionary.Length; i++)
+                    for (var i = 0; i < dictionary.Length; i++)
                     {
                         LogDebugToConsoleTranslated("bot.autoRelog.loaded", dictionary[i]);
                         dictionary[i] = dictionary[i].ToLower();
@@ -59,9 +58,9 @@ namespace MinecraftClient.ChatBots
                 }
                 else
                 {
-                    LogToConsoleTranslated("bot.autoRelog.not_found", System.IO.Path.GetFullPath(Settings.AutoRelog_KickMessagesFile));
+                    LogToConsoleTranslated("bot.autoRelog.not_found", Path.GetFullPath(Settings.AutoRelog_KickMessagesFile));
 
-                    LogDebugToConsoleTranslated("bot.autoRelog.curr_dir", System.IO.Directory.GetCurrentDirectory());
+                    LogDebugToConsoleTranslated("bot.autoRelog.curr_dir", Directory.GetCurrentDirectory());
                 }
             }
         }
@@ -105,7 +104,7 @@ namespace MinecraftClient.ChatBots
             int delay = random.Next(delayMin, delayMax);
             LogDebugToConsoleTranslated(String.IsNullOrEmpty(msg) ? "bot.autoRelog.reconnect_always" : "bot.autoRelog.reconnect", msg);
             LogToConsoleTranslated("bot.autoRelog.wait", delay);
-            System.Threading.Thread.Sleep(delay * 1000);
+            Thread.Sleep(delay * 1000);
             ReconnectToTheServer();
         }
 
@@ -113,7 +112,7 @@ namespace MinecraftClient.ChatBots
         {
             if (Settings.AutoRelog_Enabled)
             {
-                AutoRelog bot = new AutoRelog(Settings.AutoRelog_Delay_Min, Settings.AutoRelog_Delay_Max, Settings.AutoRelog_Retries);
+                var bot = new AutoRelog(Settings.AutoRelog_Delay_Min, Settings.AutoRelog_Delay_Max, Settings.AutoRelog_Retries);
                 bot.Initialize();
                 return bot.OnDisconnect(reason, message);
             }

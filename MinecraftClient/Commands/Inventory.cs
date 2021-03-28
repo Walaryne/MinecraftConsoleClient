@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MinecraftClient.Inventory;
-
 namespace MinecraftClient.Commands
 {
     class Inventory : Command
@@ -26,33 +25,30 @@ namespace MinecraftClient.Commands
                             if (args.Length >= 4)
                             {
                                 int slot = int.Parse(args[1]);
-                                ItemType itemType = ItemType.Stone;
+                                var itemType = ItemType.Stone;
                                 if (Enum.TryParse(args[2], true, out itemType))
                                 {
                                     if (handler.GetGamemode() == 1)
                                     {
                                         int count = int.Parse(args[3]);
-                                        if (handler.DoCreativeGive(slot, itemType, count, null))
+                                        if (handler.DoCreativeGive(slot, itemType, count))
                                             return Translations.Get("cmd.inventory.creative_done", itemType, count, slot);
                                         else return Translations.Get("cmd.inventory.creative_fail");
                                     }
                                     else return Translations.Get("cmd.inventory.need_creative");
                                 }
-                                else
-                                {
-                                    return GetCmdDescTranslated();
-                                }
+                                return GetCmdDescTranslated();
                             }
-                            else return GetCmdDescTranslated();
+                            return GetCmdDescTranslated();
                         }
-                        else if (args[0].ToLower().StartsWith("p"))
+                        if (args[0].ToLower().StartsWith("p"))
                         {
                             // player inventory is always ID 0
                             inventoryId = 0;
                         }
                         else if (args[0].ToLower().StartsWith("c"))
                         {
-                            List<int> availableIds = handler.GetInventories().Keys.ToList();
+                            var availableIds = handler.GetInventories().Keys.ToList();
                             availableIds.Remove(0); // remove player inventory ID from list
                             if (availableIds.Count == 1)
                                 inventoryId = availableIds[0]; // one container, use it
@@ -80,9 +76,9 @@ namespace MinecraftClient.Commands
                                 Container inventory = handler.GetInventory(inventoryId);
                                 if(inventory==null)
                                     return Translations.Get("cmd.inventory.not_exist", inventoryId);
-                                List<string> response = new List<string>();
+                                var response = new List<string>();
                                 response.Add(Translations.Get("cmd.inventory.inventory") + " #" + inventoryId + " - " + inventory.Title + "§8");
-                                foreach (KeyValuePair<int, Item> item in inventory.Items)
+                                foreach (var item in inventory.Items)
                                 {
                                     string displayName = item.Value.DisplayName;
                                     if (String.IsNullOrEmpty(displayName))
@@ -106,8 +102,8 @@ namespace MinecraftClient.Commands
                                 if (args.Length >= 3)
                                 {
                                     int slot = int.Parse(args[2]);
-                                    WindowActionType actionType = WindowActionType.LeftClick;
-                                    string keyName = "cmd.inventory.left";
+                                    var actionType = WindowActionType.LeftClick;
+                                    var keyName = "cmd.inventory.left";
                                     if (args.Length >= 4)
                                     {
                                         string b = args[3];
@@ -133,7 +129,7 @@ namespace MinecraftClient.Commands
                                     // check item exist
                                     if (!handler.GetInventory(inventoryId).Items.ContainsKey(slot))
                                         return Translations.Get("cmd.inventory.no_item", slot);
-                                    WindowActionType actionType = WindowActionType.DropItem;
+                                    var actionType = WindowActionType.DropItem;
                                     if (args.Length >= 4)
                                     {
                                         if (args[3].ToLower() == "all")
@@ -159,12 +155,11 @@ namespace MinecraftClient.Commands
                     }
                     catch (FormatException) { return GetCmdDescTranslated(); }
                 }
-                else
                 {
-                    Dictionary<int, Container> inventories = handler.GetInventories();
-                    List<string> response = new List<string>();
+                    var inventories = handler.GetInventories();
+                    var response = new List<string>();
                     response.Add(Translations.Get("cmd.inventory.inventories") + ":");
-                    foreach (KeyValuePair<int, Container> inventory in inventories)
+                    foreach (var inventory in inventories)
                     {
                         response.Add(String.Format(" #{0}: {1}", inventory.Key, inventory.Value.Title + "§8"));
                     }
@@ -172,7 +167,7 @@ namespace MinecraftClient.Commands
                     return String.Join("\n", response);
                 }
             }
-            else return Translations.Get("extra.inventory_required");
+            return Translations.Get("extra.inventory_required");
         }
 
         #region Methods for commands help

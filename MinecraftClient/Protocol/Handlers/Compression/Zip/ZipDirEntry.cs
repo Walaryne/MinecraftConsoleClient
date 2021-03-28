@@ -29,7 +29,9 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 namespace Ionic.Zip
 {
 
@@ -56,10 +58,10 @@ namespace Ionic.Zip
             // in the central directory.
 
             // Set to -1, to indicate we need to read this later.
-            this.__FileDataPosition = -1;
+            __FileDataPosition = -1;
 
             // set _LengthOfHeader to 0, to indicate we need to read later.
-            this._LengthOfHeader = 0;
+            _LengthOfHeader = 0;
         }
 
         /// <summary>
@@ -69,40 +71,40 @@ namespace Ionic.Zip
         {
             get
             {
-                var builder = new System.Text.StringBuilder();
+                var builder = new StringBuilder();
                 builder
-                    .Append(string.Format("          ZipEntry: {0}\n", this.FileName))
-                    .Append(string.Format("   Version Made By: {0}\n", this._VersionMadeBy))
-                    .Append(string.Format(" Needed to extract: {0}\n", this.VersionNeeded));
+                    .Append(string.Format("          ZipEntry: {0}\n", FileName))
+                    .Append(string.Format("   Version Made By: {0}\n", _VersionMadeBy))
+                    .Append(string.Format(" Needed to extract: {0}\n", VersionNeeded));
 
-                if (this._IsDirectory)
+                if (_IsDirectory)
                     builder.Append("        Entry type: directory\n");
                 else
                 {
-                    builder.Append(string.Format("         File type: {0}\n", this._IsText? "text":"binary"))
-                        .Append(string.Format("       Compression: {0}\n", this.CompressionMethod))
-                        .Append(string.Format("        Compressed: 0x{0:X}\n", this.CompressedSize))
-                        .Append(string.Format("      Uncompressed: 0x{0:X}\n", this.UncompressedSize))
-                        .Append(string.Format("             CRC32: 0x{0:X8}\n", this._Crc32));
+                    builder.Append(string.Format("         File type: {0}\n", _IsText? "text":"binary"))
+                        .Append(string.Format("       Compression: {0}\n", CompressionMethod))
+                        .Append(string.Format("        Compressed: 0x{0:X}\n", CompressedSize))
+                        .Append(string.Format("      Uncompressed: 0x{0:X}\n", UncompressedSize))
+                        .Append(string.Format("             CRC32: 0x{0:X8}\n", _Crc32));
                 }
-                builder.Append(string.Format("       Disk Number: {0}\n", this._diskNumber));
-                if (this._RelativeOffsetOfLocalHeader > 0xFFFFFFFF)
+                builder.Append(string.Format("       Disk Number: {0}\n", _diskNumber));
+                if (_RelativeOffsetOfLocalHeader > 0xFFFFFFFF)
                     builder
-                        .Append(string.Format("   Relative Offset: 0x{0:X16}\n", this._RelativeOffsetOfLocalHeader));
+                        .Append(string.Format("   Relative Offset: 0x{0:X16}\n", _RelativeOffsetOfLocalHeader));
                         else
                     builder
-                        .Append(string.Format("   Relative Offset: 0x{0:X8}\n", this._RelativeOffsetOfLocalHeader));
+                        .Append(string.Format("   Relative Offset: 0x{0:X8}\n", _RelativeOffsetOfLocalHeader));
 
                     builder
-                    .Append(string.Format("         Bit Field: 0x{0:X4}\n", this._BitField))
-                    .Append(string.Format("        Encrypted?: {0}\n", this._sourceIsEncrypted))
-                    .Append(string.Format("          Timeblob: 0x{0:X8}\n", this._TimeBlob))
-                        .Append(string.Format("              Time: {0}\n", Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)));
+                    .Append(string.Format("         Bit Field: 0x{0:X4}\n", _BitField))
+                    .Append(string.Format("        Encrypted?: {0}\n", _sourceIsEncrypted))
+                    .Append(string.Format("          Timeblob: 0x{0:X8}\n", _TimeBlob))
+                        .Append(string.Format("              Time: {0}\n", SharedUtilities.PackedToDateTime(_TimeBlob)));
 
-                builder.Append(string.Format("         Is Zip64?: {0}\n", this._InputUsesZip64));
-                if (!string.IsNullOrEmpty(this._Comment))
+                builder.Append(string.Format("         Is Zip64?: {0}\n", _InputUsesZip64));
+                if (!string.IsNullOrEmpty(_Comment))
                 {
-                    builder.Append(string.Format("           Comment: {0}\n", this._Comment));
+                    builder.Append(string.Format("           Comment: {0}\n", _Comment));
                 }
                 builder.Append("\n");
                 return builder.ToString();
@@ -113,10 +115,10 @@ namespace Ionic.Zip
         // workitem 10330
         private class CopyHelper
         {
-            private static System.Text.RegularExpressions.Regex re =
-                new System.Text.RegularExpressions.Regex(" \\(copy (\\d+)\\)$");
+            private static Regex re =
+                new Regex(" \\(copy (\\d+)\\)$");
 
-            private static int callCount = 0;
+            private static int callCount;
 
             internal static string AppendCopyToFileName(string f)
             {
@@ -124,13 +126,13 @@ namespace Ionic.Zip
                 if (callCount > 25)
                     throw new OverflowException("overflow while creating filename");
 
-                int n = 1;
+                var n = 1;
                 int r = f.LastIndexOf(".");
 
                 if (r == -1)
                 {
                     // there is no extension
-                    System.Text.RegularExpressions.Match m = re.Match(f);
+                    Match m = re.Match(f);
                     if (m.Success)
                     {
                         n = Int32.Parse(m.Groups[1].Value) + 1;
@@ -146,7 +148,7 @@ namespace Ionic.Zip
                 else
                 {
                     //System.Console.WriteLine("HasExtension");
-                    System.Text.RegularExpressions.Match m = re.Match(f.Substring(0, r));
+                    Match m = re.Match(f.Substring(0, r));
                     if (m.Success)
                     {
                         n = Int32.Parse(m.Groups[1].Value) + 1;
@@ -186,18 +188,18 @@ namespace Ionic.Zip
         internal static ZipEntry ReadDirEntry(ZipFile zf,
                                               Dictionary<String,Object> previouslySeen)
         {
-            System.IO.Stream s = zf.ReadStream;
-            System.Text.Encoding expectedEncoding = (zf.AlternateEncodingUsage == ZipOption.Always)
+            Stream s = zf.ReadStream;
+            Encoding expectedEncoding = (zf.AlternateEncodingUsage == ZipOption.Always)
                 ? zf.AlternateEncoding
                 : ZipFile.DefaultEncoding;
 
-            int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
+            int signature = SharedUtilities.ReadSignature(s);
             // return null if this is not a local file header signature
             if (IsNotValidZipDirEntrySig(signature))
             {
-                s.Seek(-4, System.IO.SeekOrigin.Current);
+                s.Seek(-4, SeekOrigin.Current);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
+                SharedUtilities.Workaround_Ladybug318918(s);
 
                 // Getting "not a ZipDirEntry signature" here is not always wrong or an
                 // error.  This can happen when walking through a zipfile.  After the
@@ -215,12 +217,12 @@ namespace Ionic.Zip
             }
 
             int bytesRead = 42 + 4;
-            byte[] block = new byte[42];
+            var block = new byte[42];
             int n = s.Read(block, 0, block.Length);
             if (n != block.Length) return null;
 
-            int i = 0;
-            ZipEntry zde = new ZipEntry();
+            var i = 0;
+            var zde = new ZipEntry();
             zde.AlternateEncoding = expectedEncoding;
             zde._Source = ZipEntrySource.ZipFile;
             zde._container = new ZipContainer(zf);
@@ -232,7 +234,7 @@ namespace Ionic.Zip
                 zde._BitField = (short)(block[i++] + block[i++] * 256);
                 zde._CompressionMethod = (Int16)(block[i++] + block[i++] * 256);
                 zde._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
-                zde._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(zde._TimeBlob);
+                zde._LastModified = SharedUtilities.PackedToDateTime(zde._TimeBlob);
                 zde._timestamp |= ZipEntryTimestamp.DOS;
 
                 zde._Crc32 = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
@@ -262,11 +264,11 @@ namespace Ionic.Zip
             if ((zde._BitField & 0x0800) == 0x0800)
             {
                 // UTF-8 is in use
-                zde._FileNameInArchive = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
+                zde._FileNameInArchive = SharedUtilities.Utf8StringFromBuffer(block);
             }
             else
             {
-                zde._FileNameInArchive = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
+                zde._FileNameInArchive = SharedUtilities.StringFromBuffer(block, expectedEncoding);
             }
 
             // workitem 10330
@@ -331,7 +333,7 @@ namespace Ionic.Zip
 
             // workitem 12744
             zde.AlternateEncoding = ((zde._BitField & 0x0800) == 0x0800)
-                ? System.Text.Encoding.UTF8
+                ? Encoding.UTF8
                 :expectedEncoding;
 
             zde.AlternateEncodingUsage = ZipOption.Always;
@@ -344,11 +346,11 @@ namespace Ionic.Zip
                 if ((zde._BitField & 0x0800) == 0x0800)
                 {
                     // UTF-8 is in use
-                    zde._Comment = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
+                    zde._Comment = SharedUtilities.Utf8StringFromBuffer(block);
                 }
                 else
                 {
-                    zde._Comment = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
+                    zde._Comment = SharedUtilities.StringFromBuffer(block, expectedEncoding);
                 }
             }
             //zde._LengthOfDirEntry = bytesRead;

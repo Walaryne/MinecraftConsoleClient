@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-
 namespace Heijden.DNS
 {
 	public class Request
@@ -28,7 +25,7 @@ namespace Heijden.DNS
 		{
 			get
 			{
-				List<byte> data = new List<byte>();
+				var data = new List<byte>();
 				header.QDCOUNT = (ushort)questions.Count;
 				data.AddRange(header.Data);
 				foreach (Question q in questions)

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -13,7 +12,7 @@ namespace MinecraftClient.ChatBots
     {
         private string matchesFile;
         private List<RespondRule> respondRules;
-        private enum MessageType { Public, Private, Other };
+        private enum MessageType { Public, Private, Other }
 
         /// <summary>
         /// Create a new AutoRespond bot
@@ -47,7 +46,7 @@ namespace MinecraftClient.ChatBots
             public RespondRule(Regex regex, string actionPublic, string actionPrivate, string actionOther, bool ownersOnly)
             {
                 this.regex = regex;
-                this.match = null;
+                match = null;
                 this.actionPublic = actionPublic;
                 this.actionPrivate = actionPrivate;
                 this.actionOther = actionOther;
@@ -63,7 +62,7 @@ namespace MinecraftClient.ChatBots
             /// <param name="ownersOnly">Only match messages from bot owners</param>
             public RespondRule(string match, string actionPublic, string actionPrivate, string actionOther, bool ownersOnly)
             {
-                this.regex = null;
+                regex = null;
                 this.match = match;
                 this.actionPublic = actionPublic;
                 this.actionPrivate = actionPrivate;
@@ -138,11 +137,11 @@ namespace MinecraftClient.ChatBots
                 string matchAction = null;
                 string matchActionPrivate = null;
                 string matchActionOther = null;
-                bool ownersOnly = false;
+                var ownersOnly = false;
                 respondRules = new List<RespondRule>();
 
                 if (Settings.DebugMessages)
-                    LogToConsole("Loading matches from file: " + System.IO.Path.GetFullPath(matchesFile));
+                    LogToConsole("Loading matches from file: " + Path.GetFullPath(matchesFile));
 
                 foreach (string lineRAW in File.ReadAllLines(matchesFile, Encoding.UTF8))
                 {
@@ -187,7 +186,7 @@ namespace MinecraftClient.ChatBots
             }
             else
             {
-                LogToConsole("File not found: '" + System.IO.Path.GetFullPath(matchesFile) + "'");
+                LogToConsole("File not found: '" + Path.GetFullPath(matchesFile) + "'");
                 UnloadBot(); //No need to keep the bot active
             }
         }
@@ -222,7 +221,7 @@ namespace MinecraftClient.ChatBots
 
             //Get Message type
             string sender = "", message = "";
-            MessageType msgType = MessageType.Other;
+            var msgType = MessageType.Other;
             if (IsChatMessage(text, ref message, ref sender))
                 msgType = MessageType.Public;
             else if (IsPrivateMessage(text, ref message, ref sender))
@@ -234,7 +233,7 @@ namespace MinecraftClient.ChatBots
             {
                 foreach (RespondRule rule in respondRules)
                 {
-                    Dictionary<string, object> localVars = new Dictionary<string, object>();
+                    var localVars = new Dictionary<string, object>();
                     string toPerform = rule.Match(sender, message, msgType, localVars);
                     if (!String.IsNullOrEmpty(toPerform))
                     {

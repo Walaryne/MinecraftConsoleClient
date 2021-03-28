@@ -1,9 +1,6 @@
-﻿using MinecraftClient.Mapping;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+using MinecraftClient.Mapping;
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -59,7 +56,7 @@ namespace MinecraftClient.ChatBots
                 {
                     if (singleMode)
                     {
-                        int priorityEntity = 0;
+                        var priorityEntity = 0;
                         if (priorityDistance) // closest distance priority
                         {
                             double distance = 5;
@@ -89,12 +86,12 @@ namespace MinecraftClient.ChatBots
                         if (shouldAttackEntity(entitiesToAttack[priorityEntity]))
                         {
                             InteractEntity(priorityEntity, 1); // hit the entity!
-                            SendAnimation(Inventory.Hand.MainHand); // Arm animation
+                            SendAnimation();                   // Arm animation
                         }
                     }
                     else
                     {
-                        foreach (KeyValuePair<int, Entity> entity in entitiesToAttack)
+                        foreach (var entity in entitiesToAttack)
                         {
                             // check that we are in range once again.
                             if (shouldAttackEntity(entity.Value))
@@ -102,7 +99,7 @@ namespace MinecraftClient.ChatBots
                                 InteractEntity(entity.Key, 1); // hit the entity!
                             }
                         }
-                        SendAnimation(Inventory.Hand.MainHand); // Arm animation
+                        SendAnimation(); // Arm animation
                     }
                 }
             }
@@ -183,16 +180,13 @@ namespace MinecraftClient.ChatBots
 
                 return true;
             }
-            else
+            // remove marker on entity to attack it, as it is now out of range
+            if (isBeingAttacked)
             {
-                // remove marker on entity to attack it, as it is now out of range
-                if (isBeingAttacked)
-                {
-                    entitiesToAttack.Remove(entity.ID);
-                }
-
-                return false;
+                entitiesToAttack.Remove(entity.ID);
             }
+
+            return false;
         }
     }
 }

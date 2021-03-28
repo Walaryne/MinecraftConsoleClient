@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
+using System.IO;
 namespace MinecraftClient.Mapping.EntityPalettes
 {
     public abstract class EntityPalette
@@ -29,8 +26,8 @@ namespace MinecraftClient.Mapping.EntityPalettes
         /// <returns>EntityType corresponding to the specified ID</returns>
         public EntityType FromId(int id, bool living)
         {
-            Dictionary<int, EntityType> entityTypes = GetDict();
-            Dictionary<int, EntityType> entityTypesNonLiving = GetDictNonLiving();
+            var entityTypes = GetDict();
+            var entityTypesNonLiving = GetDictNonLiving();
 
             if (entityTypesNonLiving != null && !living)
             {
@@ -45,7 +42,7 @@ namespace MinecraftClient.Mapping.EntityPalettes
                     return entityTypes[id];
             }
 
-            throw new System.IO.InvalidDataException("Unknown Entity ID " + id + ". Is Entity Palette up to date for this Minecraft version?");
+            throw new InvalidDataException("Unknown Entity ID " + id + ". Is Entity Palette up to date for this Minecraft version?");
         }
     }
 }

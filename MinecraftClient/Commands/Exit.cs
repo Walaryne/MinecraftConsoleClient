@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     public class Exit : Command
@@ -19,7 +15,7 @@ namespace MinecraftClient.Commands
 
         public override IEnumerable<string> getCMDAliases()
         {
-            return new string[] { "quit" };
+            return new[] { "quit" };
         }
     }
 }

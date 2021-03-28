@@ -28,6 +28,8 @@
 
 using System;
 using System.IO;
+using System.Text;
+using Ionic.Zlib;
 using Interop = System.Runtime.InteropServices;
 
 namespace Ionic.Zip
@@ -38,9 +40,9 @@ namespace Ionic.Zip
     /// </summary>
 
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00004")]
-    [Interop.ComVisible(true)]
+    [Interop.ComVisibleAttribute(true)]
 #if !NETCF
-    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]  // AutoDual
+    [Interop.ClassInterfaceAttribute(Interop.ClassInterfaceType.AutoDispatch)]  // AutoDual
 #endif
     public partial class ZipEntry
     {
@@ -54,10 +56,10 @@ namespace Ionic.Zip
         public ZipEntry()
         {
             _CompressionMethod = (Int16)CompressionMethod.Deflate;
-            _CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+            _CompressionLevel = CompressionLevel.Default;
             _Encryption = EncryptionAlgorithm.None;
             _Source = ZipEntrySource.None;
-            AlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
+            AlternateEncoding = Encoding.GetEncoding("IBM437");
             AlternateEncodingUsage = ZipOption.Never;
         }
 
@@ -211,7 +213,7 @@ namespace Ionic.Zip
                 _LastModified = (value.Kind == DateTimeKind.Unspecified)
                     ? DateTime.SpecifyKind(value, DateTimeKind.Local)
                     : value.ToLocalTime();
-                _Mtime = Ionic.Zip.SharedUtilities.AdjustTime_Reverse(_LastModified).ToUniversalTime();
+                _Mtime = SharedUtilities.AdjustTime_Reverse(_LastModified).ToUniversalTime();
                 _metadataChanged = true;
             }
         }
@@ -221,7 +223,7 @@ namespace Ionic.Zip
         {
             get
             {
-                return this._container.BufferSize;
+                return _container.BufferSize;
             }
         }
 
@@ -734,10 +736,10 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
-        public System.IO.FileAttributes Attributes
+        public FileAttributes Attributes
         {
             // workitem 7071
-            get { return (System.IO.FileAttributes)_ExternalFileAttrs; }
+            get { return (FileAttributes)_ExternalFileAttrs; }
             set
             {
                 _ExternalFileAttrs = (int)value;
@@ -869,13 +871,13 @@ namespace Ionic.Zip
                 // rename the entry!
                 if (String.IsNullOrEmpty(value)) throw new ZipException("The FileName must be non empty and non-null.");
 
-                var filename = ZipEntry.NameInArchive(value, null);
+                var filename = NameInArchive(value, null);
                 // workitem 8180
                 if (_FileNameInArchive == filename) return; // nothing to do
 
                 // workitem 8047 - when renaming, must remove old and then add a new entry
-                this._container.ZipFile.RemoveEntry(this);
-                this._container.ZipFile.InternalAddEntry(filename, this);
+                _container.ZipFile.RemoveEntry(this);
+                _container.ZipFile.InternalAddEntry(filename, this);
 
                 _FileNameInArchive = filename;
                 _container.ZipFile.NotifyEntryChanged();
@@ -932,7 +934,7 @@ namespace Ionic.Zip
 
             set
             {
-                if (this._Source != ZipEntrySource.Stream)
+                if (_Source != ZipEntrySource.Stream)
                     throw new ZipException("You must not set the input stream for this entry.");
 
                 _sourceWasJitProvided = true;
@@ -1141,7 +1143,7 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         /// <seealso cref="OutputUsedZip64"/>
-        public Nullable<bool> RequiresZip64
+        public bool? RequiresZip64
         {
             get
             {
@@ -1172,7 +1174,7 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         /// <seealso cref="RequiresZip64"/>
-        public Nullable<bool> OutputUsedZip64
+        public bool? OutputUsedZip64
         {
             get { return _OutputUsesZip64; }
         }
@@ -1388,10 +1390,10 @@ namespace Ionic.Zip
 
                 _CompressionMethod = (Int16)value;
 
-                if (_CompressionMethod == (Int16)Ionic.Zip.CompressionMethod.None)
-                    _CompressionLevel = Ionic.Zlib.CompressionLevel.None;
-                else if (CompressionLevel == Ionic.Zlib.CompressionLevel.None)
-                    _CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+                if (_CompressionMethod == (Int16)CompressionMethod.None)
+                    _CompressionLevel = CompressionLevel.None;
+                else if (CompressionLevel == CompressionLevel.None)
+                    _CompressionLevel = CompressionLevel.Default;
 
                 if (_container.ZipFile != null) _container.ZipFile.NotifyEntryChanged();
                 _restreamRequiredOnSave = true;
@@ -1441,7 +1443,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <seealso cref="CompressionMethod"/>
-        public Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompressionLevel CompressionLevel
         {
             get
             {
@@ -1453,18 +1455,18 @@ namespace Ionic.Zip
                     _CompressionMethod != (short)CompressionMethod.None)
                     return ; // no effect
 
-                if (value == Ionic.Zlib.CompressionLevel.Default &&
+                if (value == CompressionLevel.Default &&
                     _CompressionMethod == (short)CompressionMethod.Deflate) return; // nothing to do
                 _CompressionLevel = value;
 
-                if (value == Ionic.Zlib.CompressionLevel.None &&
+                if (value == CompressionLevel.None &&
                     _CompressionMethod == (short)CompressionMethod.None)
                     return; // nothing more to do
 
-                if (_CompressionLevel == Ionic.Zlib.CompressionLevel.None)
-                    _CompressionMethod = (short) Ionic.Zip.CompressionMethod.None;
+                if (_CompressionLevel == CompressionLevel.None)
+                    _CompressionMethod = (short) CompressionMethod.None;
                 else
-                    _CompressionMethod = (short) Ionic.Zip.CompressionMethod.Deflate;
+                    _CompressionMethod = (short) CompressionMethod.Deflate;
 
                 if (_container.ZipFile != null) _container.ZipFile.NotifyEntryChanged();
                 _restreamRequiredOnSave = true;
@@ -1936,7 +1938,7 @@ namespace Ionic.Zip
 
                     // If the source is a zip archive and there was previously no encryption
                     // on the entry, then we must re-stream the entry in order to encrypt it.
-                    if (this._Source == ZipEntrySource.ZipFile && !_sourceIsEncrypted)
+                    if (_Source == ZipEntrySource.ZipFile && !_sourceIsEncrypted)
                         _restreamRequiredOnSave = true;
 
                     if (Encryption == EncryptionAlgorithm.None)
@@ -2132,20 +2134,20 @@ namespace Ionic.Zip
         {
             get
             {
-                return (AlternateEncoding == System.Text.Encoding.GetEncoding("UTF-8")) &&
+                return (AlternateEncoding == Encoding.GetEncoding("UTF-8")) &&
                     (AlternateEncodingUsage == ZipOption.AsNecessary);
             }
             set
             {
                 if (value)
                 {
-                    AlternateEncoding = System.Text.Encoding.GetEncoding("UTF-8");
+                    AlternateEncoding = Encoding.GetEncoding("UTF-8");
                     AlternateEncodingUsage = ZipOption.AsNecessary;
 
                 }
                 else
                 {
-                    AlternateEncoding = Ionic.Zip.ZipFile.DefaultEncoding;
+                    AlternateEncoding = ZipFile.DefaultEncoding;
                     AlternateEncodingUsage = ZipOption.Never;
                 }
             }
@@ -2164,7 +2166,7 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         [Obsolete("This property is obsolete since v1.9.1.6. Use AlternateEncoding and AlternateEncodingUsage instead.", true)]
-        public System.Text.Encoding ProvisionalAlternateEncoding
+        public Encoding ProvisionalAlternateEncoding
         {
             get; set;
         }
@@ -2219,7 +2221,7 @@ namespace Ionic.Zip
         /// </code>
         /// </example>
         /// <seealso cref="ZipFile.AlternateEncodingUsage" />
-        public System.Text.Encoding AlternateEncoding
+        public Encoding AlternateEncoding
         {
             get; set;
         }
@@ -2337,9 +2339,9 @@ namespace Ionic.Zip
         private static ZipEntry Create(string nameInArchive, ZipEntrySource source, Object arg1, Object arg2)
         {
             if (String.IsNullOrEmpty(nameInArchive))
-                throw new Ionic.Zip.ZipException("The entry name must be non-null and non-empty.");
+                throw new ZipException("The entry name must be non-null and non-empty.");
 
-            ZipEntry entry = new ZipEntry();
+            var entry = new ZipEntry();
 
             // workitem 7071
             // workitem 7926 - "version made by" OS should be zero for compat with WinZip
@@ -2371,10 +2373,10 @@ namespace Ionic.Zip
             }
             else
             {
-                String filename = (arg1 as String);   // must not be null
+                var filename = (arg1 as String);   // must not be null
 
                 if (String.IsNullOrEmpty(filename))
-                    throw new Ionic.Zip.ZipException("The filename must be non-null and non-empty.");
+                    throw new ZipException("The filename must be non-null and non-empty.");
 
                 try
                 {
@@ -2417,7 +2419,7 @@ namespace Ionic.Zip
                     entry._LocalFileName = Path.GetFullPath(filename); // workitem 8813
 
                 }
-                catch (System.IO.PathTooLongException ptle)
+                catch (PathTooLongException ptle)
                 {
                     // workitem 14035
                     var msg = String.Format("The path is too long, filename={0}",
@@ -2576,53 +2578,53 @@ namespace Ionic.Zip
             // The value for FileDataPosition has not yet been set.
             // Therefore, seek to the local header, and figure the start of file data.
             // workitem 8098: ok (restore)
-            long origPosition = this.ArchiveStream.Position;
+            long origPosition = ArchiveStream.Position;
             try
             {
-                this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                ArchiveStream.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
 
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+                SharedUtilities.Workaround_Ladybug318918(ArchiveStream);
             }
-            catch (System.IO.IOException exc1)
+            catch (IOException exc1)
             {
                 string description = String.Format("Exception seeking  entry({0}) offset(0x{1:X8}) len(0x{2:X8})",
-                                                   this.FileName, this._RelativeOffsetOfLocalHeader,
-                                                   this.ArchiveStream.Length);
+                                                   FileName, _RelativeOffsetOfLocalHeader,
+                                                   ArchiveStream.Length);
                 throw new BadStateException(description, exc1);
             }
 
-            byte[] block = new byte[30];
-            this.ArchiveStream.Read(block, 0, block.Length);
+            var block = new byte[30];
+            ArchiveStream.Read(block, 0, block.Length);
 
             // At this point we could verify the contents read from the local header
             // with the contents read from the central header.  We could, but don't need to.
             // So we won't.
 
-            Int16 filenameLength = (short)(block[26] + block[27] * 256);
-            Int16 extraFieldLength = (short)(block[28] + block[29] * 256);
+            var filenameLength = (short)(block[26] + block[27] * 256);
+            var extraFieldLength = (short)(block[28] + block[29] * 256);
 
             // Console.WriteLine("  pos  0x{0:X8} ({0})", this.ArchiveStream.Position);
             // Console.WriteLine("  seek 0x{0:X8} ({0})", filenameLength + extraFieldLength);
 
-            this.ArchiveStream.Seek(filenameLength + extraFieldLength, SeekOrigin.Current);
+            ArchiveStream.Seek(filenameLength + extraFieldLength, SeekOrigin.Current);
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+            SharedUtilities.Workaround_Ladybug318918(ArchiveStream);
 
-            this._LengthOfHeader = 30 + extraFieldLength + filenameLength +
+            _LengthOfHeader = 30 + extraFieldLength + filenameLength +
                 GetLengthOfCryptoHeaderBytes(_Encryption_FromZipFile);
 
             // Console.WriteLine("  ROLH  0x{0:X8} ({0})", _RelativeOffsetOfLocalHeader);
             // Console.WriteLine("  LOH   0x{0:X8} ({0})", _LengthOfHeader);
             // workitem 8098: ok (arithmetic)
-            this.__FileDataPosition = _RelativeOffsetOfLocalHeader + _LengthOfHeader;
+            __FileDataPosition = _RelativeOffsetOfLocalHeader + _LengthOfHeader;
             // Console.WriteLine("  FDP   0x{0:X8} ({0})", __FileDataPosition);
 
             // restore file position:
             // workitem 8098: ok (restore)
-            this.ArchiveStream.Seek(origPosition, SeekOrigin.Begin);
+            ArchiveStream.Seek(origPosition, SeekOrigin.Begin);
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+            SharedUtilities.Workaround_Ladybug318918(ArchiveStream);
         }
 
 
@@ -2700,7 +2702,7 @@ namespace Ionic.Zip
         internal Int16 _BitField;
         internal Int16 _CompressionMethod;
         private Int16 _CompressionMethod_FromZipFile;
-        private Ionic.Zlib.CompressionLevel _CompressionLevel;
+        private CompressionLevel _CompressionLevel;
         internal string _Comment;
         private bool _IsDirectory;
         private byte[] _CommentBytes;
@@ -2717,9 +2719,9 @@ namespace Ionic.Zip
         private bool _skippedDuringSave;
         private UInt32 _diskNumber;
 
-        private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
+        private static Encoding ibm437 = Encoding.GetEncoding("IBM437");
         //private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
-        private System.Text.Encoding _actualEncoding;
+        private Encoding _actualEncoding;
 
         internal ZipContainer _container;
 
@@ -2740,18 +2742,18 @@ namespace Ionic.Zip
         internal byte[] _WeakEncryptionHeader;
         internal Stream _archiveStream;
         private Stream _sourceStream;
-        private Nullable<Int64> _sourceStreamOriginalPosition;
+        private Int64? _sourceStreamOriginalPosition;
         private bool _sourceWasJitProvided;
         private bool _ioOperationCanceled;
         private bool _presumeZip64;
-        private Nullable<bool> _entryRequiresZip64;
-        private Nullable<bool> _OutputUsesZip64;
+        private bool? _entryRequiresZip64;
+        private bool? _OutputUsesZip64;
         private bool _IsText; // workitem 7801
         private ZipEntryTimestamp _timestamp;
 
-        private static System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        private static System.DateTime _win32Epoch = System.DateTime.FromFileTimeUtc(0L);
-        private static System.DateTime _zeroHour = new System.DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static DateTime _win32Epoch = DateTime.FromFileTimeUtc(0L);
+        private static DateTime _zeroHour = new DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private WriteDelegate _WriteDelegate;
         private OpenDelegate _OpenDelegate;

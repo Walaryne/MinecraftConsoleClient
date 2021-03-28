@@ -1,9 +1,6 @@
-using MinecraftClient.Mapping;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+using MinecraftClient.Mapping;
 namespace MinecraftClient.Commands
 {
     class Useblock : Command
@@ -20,9 +17,9 @@ namespace MinecraftClient.Commands
                 string[] args = getArgs(command);
                 if (args.Length >= 3)
                 {
-                    int x = Convert.ToInt32(args[0]);
-                    int y = Convert.ToInt32(args[1]);
-                    int z = Convert.ToInt32(args[2]);
+                    var x = Convert.ToInt32(args[0]);
+                    var y = Convert.ToInt32(args[1]);
+                    var z = Convert.ToInt32(args[2]);
                     handler.PlaceBlock(new Location(x, y, z), Direction.Down);
                 }
                 else { return GetCmdDescTranslated();  }

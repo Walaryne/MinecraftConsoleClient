@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 using System.Threading;
-
+using System.Windows.Forms;
 namespace MinecraftClient
 {
     /// <summary>
@@ -19,7 +17,7 @@ namespace MinecraftClient
         private static LinkedList<string> autocomplete_words = new LinkedList<string>();
         private static LinkedList<string> previous = new LinkedList<string>();
         private static readonly object io_lock = new object();
-        private static bool reading = false;
+        private static bool reading;
         private static string buffer = "";
         private static string buffer2 = "";
 
@@ -75,7 +73,7 @@ namespace MinecraftClient
         /// </summary>
         public static string ReadPassword()
         {
-            StringBuilder password = new StringBuilder();
+            var password = new StringBuilder();
 
             ConsoleKeyInfo k;
             while ((k = Console.ReadKey(true)).Key != ConsoleKey.Enter)
@@ -125,7 +123,7 @@ namespace MinecraftClient
                 return Console.ReadLine();
             }
 
-            ConsoleKeyInfo k = new ConsoleKeyInfo();
+            var k = new ConsoleKeyInfo();
 
             lock (io_lock)
             {
@@ -239,7 +237,7 @@ namespace MinecraftClient
         /// </summary>
         public static void DebugReadInput()
         {
-            ConsoleKeyInfo k = new ConsoleKeyInfo();
+            var k = new ConsoleKeyInfo();
             while (true)
             {
                 k = Console.ReadKey(true);
@@ -279,7 +277,7 @@ namespace MinecraftClient
                             if (buffer2.Length > 0)
                             {
                                 Console.Write(buffer2 + " \b");
-                                for (int i = 0; i < buffer2.Length; i++) { GoBack(); }
+                                for (var i = 0; i < buffer2.Length; i++) { GoBack(); }
                             }
                         }
                         catch (ArgumentOutOfRangeException)
@@ -337,7 +335,7 @@ namespace MinecraftClient
                 if (displayTimestamp.Value)
                 {
                     int hour = DateTime.Now.Hour, minute = DateTime.Now.Minute, second = DateTime.Now.Second;
-                    ConsoleIO.Write(String.Format("{0}:{1}:{2} ", hour.ToString("00"), minute.ToString("00"), second.ToString("00")));
+                    Write(String.Format("{0}:{1}:{2} ", hour.ToString("00"), minute.ToString("00"), second.ToString("00")));
                 }
                 if (BasicIO)
                 {
@@ -348,12 +346,12 @@ namespace MinecraftClient
                     Console.WriteLine(str);
                     return;
                 }
-                string[] parts = str.Split(new char[] { '§' });
+                string[] parts = str.Split('§');
                 if (parts[0].Length > 0)
                 {
-                    ConsoleIO.Write(parts[0]);
+                    Write(parts[0]);
                 }
-                for (int i = 1; i < parts.Length; i++)
+                for (var i = 1; i < parts.Length; i++)
                 {
                     if (parts[i].Length > 0)
                     {
@@ -380,13 +378,13 @@ namespace MinecraftClient
 
                         if (parts[i].Length > 1)
                         {
-                            ConsoleIO.Write(parts[i].Substring(1, parts[i].Length - 1));
+                            Write(parts[i].Substring(1, parts[i].Length - 1));
                         }
                     }
                 }
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
-            ConsoleIO.Write('\n');
+            Write('\n');
         }
 
         /// <summary>
@@ -439,7 +437,7 @@ namespace MinecraftClient
                     Console.Write(buffer2);
                     Console.Write(' ');
                     GoBack();
-                    for (int i = 0; i < buffer2.Length; i++)
+                    for (var i = 0; i < buffer2.Length; i++)
                     {
                         GoBack();
                     }
@@ -503,7 +501,7 @@ namespace MinecraftClient
             Console.Write(c);
             buffer += c;
             Console.Write(buffer2);
-            for (int i = 0; i < buffer2.Length; i++)
+            for (var i = 0; i < buffer2.Length; i++)
             {
                 GoBack();
             }
@@ -519,17 +517,17 @@ namespace MinecraftClient
         /// <returns>String from the Windows clipboard</returns>
         private static string ReadClipboard()
         {
-            string clipdata = "";
-            Thread staThread = new Thread(new ThreadStart(
-                delegate
-                {
-                    try
-                    {
-                        clipdata = Clipboard.GetText();
-                    }
-                    catch { }
-                }
-            ));
+            var clipdata = "";
+            var staThread = new Thread(new ThreadStart(
+                                           delegate
+                                           {
+                                               try
+                                               {
+                                                   clipdata = Clipboard.GetText();
+                                               }
+                                               catch { }
+                                           }
+                                       ));
             staThread.SetApartmentState(ApartmentState.STA);
             staThread.Start();
             staThread.Join();

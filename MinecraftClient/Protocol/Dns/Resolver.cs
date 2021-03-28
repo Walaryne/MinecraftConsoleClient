@@ -1,14 +1,13 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
-using System.Text;
-using System.Net.Sockets;
-
 using System.Net.NetworkInformation;
-
-using System.Diagnostics;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Runtime.Remoting.Messaging;
+using System.Text;
+using System.Text.RegularExpressions;
 
 
 /*
@@ -34,7 +33,7 @@ namespace Heijden.DNS
 		{
 			get
 			{
-				return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+				return Assembly.GetExecutingAssembly().GetName().Version.ToString();
 			}
 		}
 
@@ -86,7 +85,7 @@ namespace Heijden.DNS
 		/// </summary>
 		/// <param name="DnsServer">DNS server to use</param>
 		public Resolver(IPEndPoint DnsServer)
-			: this(new IPEndPoint[] { DnsServer })
+			: this(new[] { DnsServer })
 		{
 		}
 
@@ -302,7 +301,7 @@ namespace Heijden.DNS
 				response = m_ResponseCache[strKey];
 			}
 
-			int TimeLived = (int)((DateTime.Now.Ticks - response.TimeStamp.Ticks) / TimeSpan.TicksPerSecond);
+			var TimeLived = (int)((DateTime.Now.Ticks - response.TimeStamp.Ticks) / TimeSpan.TicksPerSecond);
 			foreach (RR rr in response.RecordsRR)
 			{
 				rr.TimeLived = TimeLived;
@@ -342,29 +341,28 @@ namespace Heijden.DNS
 		private Response UdpRequest(Request request)
 		{
 			// RFC1035 max. size of a UDP datagram is 512 bytes
-			byte[] responseMessage = new byte[512];
+			var responseMessage = new byte[512];
 
-			for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
+			for (var intAttempts = 0; intAttempts < m_Retries; intAttempts++)
 			{
-				for (int intDnsServer = 0; intDnsServer < m_DnsServers.Count; intDnsServer++)
+				for (var intDnsServer = 0; intDnsServer < m_DnsServers.Count; intDnsServer++)
 				{
-					Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+					var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 					socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, m_Timeout * 1000);
 
 					try
 					{
 						socket.SendTo(request.Data, m_DnsServers[intDnsServer]);
 						int intReceived = socket.Receive(responseMessage);
-						byte[] data = new byte[intReceived];
+						var data = new byte[intReceived];
 						Array.Copy(responseMessage, data, intReceived);
-						Response response = new Response(m_DnsServers[intDnsServer], data);
+						var response = new Response(m_DnsServers[intDnsServer], data);
 						AddToCache(response);
 						return response;
 					}
 					catch (SocketException)
 					{
 						Verbose(string.Format(";; Connection to nameserver {0} failed", (intDnsServer + 1)));
-						continue; // next try
 					}
 					finally
 					{
@@ -375,7 +373,7 @@ namespace Heijden.DNS
 					}
 				}
 			}
-			Response responseTimeout = new Response();
+			var responseTimeout = new Response();
 			responseTimeout.Error = "Timeout Error";
 			return responseTimeout;
 		}
@@ -385,13 +383,13 @@ namespace Heijden.DNS
 			//System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 			//sw.Start();
 
-			byte[] responseMessage = new byte[512];
+			var responseMessage = new byte[512];
 
-			for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
+			for (var intAttempts = 0; intAttempts < m_Retries; intAttempts++)
 			{
-				for (int intDnsServer = 0; intDnsServer < m_DnsServers.Count; intDnsServer++)
+				for (var intDnsServer = 0; intDnsServer < m_DnsServers.Count; intDnsServer++)
 				{
-					TcpClient tcpClient = new TcpClient();
+					var tcpClient = new TcpClient();
 					tcpClient.ReceiveTimeout = m_Timeout * 1000;
 
 					try
@@ -407,7 +405,7 @@ namespace Heijden.DNS
 							continue;
 						}
 
-						BufferedStream bs = new BufferedStream(tcpClient.GetStream());
+						var bs = new BufferedStream(tcpClient.GetStream());
 
 						byte[] data = request.Data;
 						bs.WriteByte((byte)((data.Length >> 8) & 0xff));
@@ -415,9 +413,9 @@ namespace Heijden.DNS
 						bs.Write(data, 0, data.Length);
 						bs.Flush();
 
-						Response TransferResponse = new Response();
-						int intSoa = 0;
-						int intMessageSize = 0;
+						var TransferResponse = new Response();
+						var intSoa = 0;
+						var intMessageSize = 0;
 
 						//Debug.WriteLine("Sending "+ (request.Length+2) + " bytes in "+ sw.ElapsedMilliseconds+" mS");
 
@@ -435,7 +433,7 @@ namespace Heijden.DNS
 
 							data = new byte[intLength];
 							bs.Read(data, 0, intLength);
-							Response response = new Response(m_DnsServers[intDnsServer], data);
+							var response = new Response(m_DnsServers[intDnsServer], data);
 
 							//Debug.WriteLine("Received "+ (intLength+2)+" bytes in "+sw.ElapsedMilliseconds +" mS");
 
@@ -472,7 +470,6 @@ namespace Heijden.DNS
 					} // try
 					catch (SocketException)
 					{
-						continue; // next try
 					}
 					finally
 					{
@@ -483,7 +480,7 @@ namespace Heijden.DNS
 					}
 				}
 			}
-			Response responseTimeout = new Response();
+			var responseTimeout = new Response();
 			responseTimeout.Error = "Timeout Error";
 			return responseTimeout;
 		}
@@ -497,12 +494,12 @@ namespace Heijden.DNS
 		/// <returns>Response of the query</returns>
 		public Response Query(string name, QType qtype, QClass qclass)
 		{
-			Question question = new Question(name, qtype, qclass);
+			var question = new Question(name, qtype, qclass);
 			Response response = SearchInCache(question);
 			if (response != null)
 				return response;
 
-			Request request = new Request();
+			var request = new Request();
 			request.AddQuestion(question);
 			return GetResponse(request);
 		}
@@ -515,12 +512,12 @@ namespace Heijden.DNS
 		/// <returns>Response of the query</returns>
 		public Response Query(string name, QType qtype)
 		{
-			Question question = new Question(name, qtype, QClass.IN);
+			var question = new Question(name, qtype, QClass.IN);
 			Response response = SearchInCache(question);
 			if (response != null)
 				return response;
 
-			Request request = new Request();
+			var request = new Request();
 			request.AddQuestion(question);
 			return GetResponse(request);
 		}
@@ -536,7 +533,7 @@ namespace Heijden.DNS
 			if (m_TransportType == TransportType.Tcp)
 				return TcpRequest(request);
 
-			Response response = new Response();
+			var response = new Response();
 			response.Error = "Unknown TransportType";
 			return response;
 		}
@@ -547,9 +544,9 @@ namespace Heijden.DNS
 		/// <returns></returns>
 		public static IPEndPoint[] GetDnsServers()
 		{
-			List<IPEndPoint> list = new List<IPEndPoint>();
+			var list = new List<IPEndPoint>();
 
-			NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+			var adapters = NetworkInterface.GetAllNetworkInterfaces();
 			foreach (NetworkInterface n in adapters)
 			{
 				if (n.OperationalStatus == OperationalStatus.Up)
@@ -558,7 +555,7 @@ namespace Heijden.DNS
 					// thanks to Jon Webster on May 20, 2008
 					foreach (IPAddress ipAddr in ipProps.DnsAddresses)
 					{
-						IPEndPoint entry = new IPEndPoint(ipAddr, DefaultPort);
+						var entry = new IPEndPoint(ipAddr, DefaultPort);
 						if (!list.Contains(entry))
 							list.Add(entry);
 					}
@@ -573,15 +570,15 @@ namespace Heijden.DNS
 
 		private IPHostEntry MakeEntry(string HostName)
 		{
-			IPHostEntry entry = new IPHostEntry();
+			var entry = new IPHostEntry();
 
 			entry.HostName = HostName;
 
 			Response response = Query(HostName, QType.A, QClass.IN);
 
 			// fill AddressList and aliases
-			List<IPAddress> AddressList = new List<IPAddress>();
-			List<string> Aliases = new List<string>();
+			var AddressList = new List<IPAddress>();
+			var Aliases = new List<string>();
 			foreach (AnswerRR answerRR in response.Answers)
 			{
 				if (answerRR.Type == Type.A)
@@ -611,7 +608,7 @@ namespace Heijden.DNS
 		{
 			if (ip.AddressFamily == AddressFamily.InterNetwork)
 			{
-				StringBuilder sb = new StringBuilder();
+				var sb = new StringBuilder();
 				sb.Append("in-addr.arpa.");
 				foreach (byte b in ip.GetAddressBytes())
 				{
@@ -621,7 +618,7 @@ namespace Heijden.DNS
 			}
 			if (ip.AddressFamily == AddressFamily.InterNetworkV6)
 			{
-				StringBuilder sb = new StringBuilder();
+				var sb = new StringBuilder();
 				sb.Append("ip6.arpa.");
 				foreach (byte b in ip.GetAddressBytes())
 				{
@@ -635,8 +632,8 @@ namespace Heijden.DNS
 
 		public static string GetArpaFromEnum(string strEnum)
 		{
-			StringBuilder sb = new StringBuilder();
-			string Number = System.Text.RegularExpressions.Regex.Replace(strEnum, "[^0-9]", "");
+			var sb = new StringBuilder();
+			string Number = Regex.Replace(strEnum, "[^0-9]", "");
 			sb.Append("e164.arpa.");
 			foreach (char c in Number)
 			{
@@ -679,7 +676,7 @@ namespace Heijden.DNS
 		/// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
 		public IAsyncResult BeginGetHostAddresses(string hostNameOrAddress, AsyncCallback requestCallback, object stateObject)
 		{
-			GetHostAddressesDelegate g = new GetHostAddressesDelegate(GetHostAddresses);
+			GetHostAddressesDelegate g = GetHostAddresses;
 			return g.BeginInvoke(hostNameOrAddress, requestCallback, stateObject);
 		}
 
@@ -693,8 +690,8 @@ namespace Heijden.DNS
 		/// <returns></returns>
 		public IPAddress[] EndGetHostAddresses(IAsyncResult AsyncResult)
 		{
-			AsyncResult aResult = (AsyncResult)AsyncResult;
-			GetHostAddressesDelegate g = (GetHostAddressesDelegate)aResult.AsyncDelegate;
+			var aResult = (AsyncResult)AsyncResult;
+			var g = (GetHostAddressesDelegate)aResult.AsyncDelegate;
 			return g.EndInvoke(AsyncResult);
 		}
 
@@ -742,7 +739,7 @@ namespace Heijden.DNS
 		/// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
 		public IAsyncResult BeginGetHostByName(string hostName, AsyncCallback requestCallback, object stateObject)
 		{
-			GetHostByNameDelegate g = new GetHostByNameDelegate(GetHostByName);
+			GetHostByNameDelegate g = GetHostByName;
 			return g.BeginInvoke(hostName, requestCallback, stateObject);
 		}
 
@@ -756,8 +753,8 @@ namespace Heijden.DNS
 		/// <returns></returns>
 		public IPHostEntry EndGetHostByName(IAsyncResult AsyncResult)
 		{
-			AsyncResult aResult = (AsyncResult)AsyncResult;
-			GetHostByNameDelegate g = (GetHostByNameDelegate)aResult.AsyncDelegate;
+			var aResult = (AsyncResult)AsyncResult;
+			var g = (GetHostByNameDelegate)aResult.AsyncDelegate;
 			return g.EndInvoke(AsyncResult);
 		}
 
@@ -790,7 +787,7 @@ namespace Heijden.DNS
 		/// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
 		public IAsyncResult BeginResolve(string hostName, AsyncCallback requestCallback, object stateObject)
 		{
-			ResolveDelegate g = new ResolveDelegate(Resolve);
+			ResolveDelegate g = Resolve;
 			return g.BeginInvoke(hostName, requestCallback, stateObject);
 		}
 
@@ -804,8 +801,8 @@ namespace Heijden.DNS
 		/// <returns>An System.Net.IPHostEntry object that contains DNS information about a host.</returns>
 		public IPHostEntry EndResolve(IAsyncResult AsyncResult)
 		{
-			AsyncResult aResult = (AsyncResult)AsyncResult;
-			ResolveDelegate g = (ResolveDelegate)aResult.AsyncDelegate;
+			var aResult = (AsyncResult)AsyncResult;
+			var g = (ResolveDelegate)aResult.AsyncDelegate;
 			return g.EndInvoke(AsyncResult);
 		}
 		#endregion
@@ -823,8 +820,7 @@ namespace Heijden.DNS
 			Response response = Query(GetArpaFromIp(ip), QType.PTR, QClass.IN);
 			if (response.RecordsPTR.Length > 0)
 				return MakeEntry(response.RecordsPTR[0].PTRDNAME);
-			else
-				return new IPHostEntry();
+			return new IPHostEntry();
 		}
 
 		/// <summary>
@@ -840,8 +836,7 @@ namespace Heijden.DNS
 			IPAddress iPAddress;
 			if (IPAddress.TryParse(hostNameOrAddress, out iPAddress))
 				return GetHostEntry(iPAddress);
-			else
-				return MakeEntry(hostNameOrAddress);
+			return MakeEntry(hostNameOrAddress);
 		}
 
 		private delegate IPHostEntry GetHostEntryViaIPDelegate(IPAddress ip);
@@ -862,7 +857,7 @@ namespace Heijden.DNS
 		/// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
 		public IAsyncResult BeginGetHostEntry(string hostNameOrAddress, AsyncCallback requestCallback, object stateObject)
 		{
-			GetHostEntryDelegate g = new GetHostEntryDelegate(GetHostEntry);
+			GetHostEntryDelegate g = GetHostEntry;
 			return g.BeginInvoke(hostNameOrAddress, requestCallback, stateObject);
 		}
 
@@ -881,7 +876,7 @@ namespace Heijden.DNS
 		/// <returns>An System.IAsyncResult instance that references the asynchronous request.</returns>
 		public IAsyncResult BeginGetHostEntry(IPAddress ip, AsyncCallback requestCallback, object stateObject)
 		{
-			GetHostEntryViaIPDelegate g = new GetHostEntryViaIPDelegate(GetHostEntry);
+			GetHostEntryViaIPDelegate g = GetHostEntry;
 			return g.BeginInvoke(ip, requestCallback, stateObject);
 		}
 
@@ -898,15 +893,15 @@ namespace Heijden.DNS
 		///</returns>
 		public IPHostEntry EndGetHostEntry(IAsyncResult AsyncResult)
 		{
-			AsyncResult aResult = (AsyncResult)AsyncResult;
+			var aResult = (AsyncResult)AsyncResult;
 			if (aResult.AsyncDelegate is GetHostEntryDelegate)
 			{
-				GetHostEntryDelegate g = (GetHostEntryDelegate)aResult.AsyncDelegate;
+				var g = (GetHostEntryDelegate)aResult.AsyncDelegate;
 				return g.EndInvoke(AsyncResult);
 			}
 			if (aResult.AsyncDelegate is GetHostEntryViaIPDelegate)
 			{
-				GetHostEntryViaIPDelegate g = (GetHostEntryViaIPDelegate)aResult.AsyncDelegate;
+				var g = (GetHostEntryViaIPDelegate)aResult.AsyncDelegate;
 				return g.EndInvoke(AsyncResult);
 			}
 			return null;
@@ -924,7 +919,7 @@ namespace Heijden.DNS
 
 		public void LoadRootFile(string strPath)
 		{
-			StreamReader sr = new StreamReader(strPath);
+			var sr = new StreamReader(strPath);
 			while (!sr.EndOfStream)
 			{
 				string strLine = sr.ReadLine();
@@ -936,13 +931,13 @@ namespace Heijden.DNS
 				strLine = strLine.Trim();
 				if (strLine.Length == 0)
 					continue;
-				RRRecordStatus status = RRRecordStatus.NAME;
-				string Name="";
-				string Ttl="";
-				string Class="";
-				string Type="";
-				string Value="";
-				string strW = "";
+				var status = RRRecordStatus.NAME;
+				var Name="";
+				var Ttl="";
+				var Class="";
+				var Type="";
+				var Value="";
+				var strW = "";
 				for (intI = 0; intI < strLine.Length; intI++)
 				{
 					char C = strLine[intI];
@@ -970,8 +965,6 @@ namespace Heijden.DNS
 							case RRRecordStatus.VALUE:
 								Value = strW;
 								status = RRRecordStatus.UNKNOWN;
-								break;
-							default:
 								break;
 						}
 						strW = "";

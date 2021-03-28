@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-
 namespace MinecraftClient.Inventory
 {
     /// <summary>
@@ -43,7 +39,7 @@ namespace MinecraftClient.Inventory
                 ((destContainer != null && !HasItem(dest, destContainer)) || (destContainer == null && !HasItem(dest))))
                 return mc.DoWindowAction(c.ID, source, WindowActionType.LeftClick)
                     && mc.DoWindowAction(destContainer == null ? c.ID : destContainer.ID, dest, WindowActionType.LeftClick);
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -62,7 +58,7 @@ namespace MinecraftClient.Inventory
                 return mc.DoWindowAction(c.ID, slot1, WindowActionType.LeftClick)
                     && mc.DoWindowAction(destContainer == null ? c.ID : destContainer.ID, slot2, WindowActionType.LeftClick)
                     && mc.DoWindowAction(c.ID, slot1, WindowActionType.LeftClick);
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -79,16 +75,16 @@ namespace MinecraftClient.Inventory
         {
             if (!HasItem(source))
                 return false;
-            List<int> availableSlots = new List<int>(slots.Count());
+            var availableSlots = new List<int>(slots.Count());
             // filter out different item type or non-empty slots (they will be ignored silently)
             foreach (var slot in slots)
                 if (ItemTypeEqual(source, slot) || !HasItem(slot))
                     availableSlots.Add(slot);
             if (availableSlots.Count > 0)
             {
-                WindowActionType startDragging = WindowActionType.StartDragLeft;
-                WindowActionType addDragging = WindowActionType.AddDragLeft;
-                WindowActionType endDragging = WindowActionType.EndDragLeft;
+                var startDragging = WindowActionType.StartDragLeft;
+                var addDragging = WindowActionType.AddDragLeft;
+                var endDragging = WindowActionType.EndDragLeft;
                 switch (mouseKey)
                 {
                     case WindowActionType.StartDragRight:
@@ -116,7 +112,7 @@ namespace MinecraftClient.Inventory
                 mc.DoWindowAction(c.ID, source, WindowActionType.LeftClick); // put down item left (if any)
                 return true;
             }
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -130,8 +126,7 @@ namespace MinecraftClient.Inventory
         {
             if (s2Container == null)
                 return (s1 != s2 && s1 < c.Type.SlotCount() && s2 < c.Type.SlotCount());
-            else
-                return (s1 < c.Type.SlotCount() && s2 < s2Container.Type.SlotCount());
+            return (s1 < c.Type.SlotCount() && s2 < s2Container.Type.SlotCount());
         }
 
         /// <summary>
@@ -160,14 +155,11 @@ namespace MinecraftClient.Inventory
             {
                 if (HasItem(slot1) && HasItem(slot2))
                     return c.Items[slot1].Type == c.Items[slot2].Type;
-                else return false;
+                return false;
             }
-            else
-            {
-                if (HasItem(slot1) && HasItem(slot2, s2Container))
-                    return c.Items[slot1].Type == s2Container.Items[slot2].Type;
-                else return false;
-            }
+            if (HasItem(slot1) && HasItem(slot2, s2Container))
+                return c.Items[slot1].Type == s2Container.Items[slot2].Type;
+            return false;
         }
     }
 }

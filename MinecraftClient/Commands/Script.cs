@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     public class Script : Command
@@ -18,7 +14,7 @@ namespace MinecraftClient.Commands
                 handler.BotLoad(new ChatBots.Script(getArg(command), null, localVars));
                 return "";
             }
-            else return GetCmdDescTranslated();
+            return GetCmdDescTranslated();
         }
     }
 }

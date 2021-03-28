@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.Commands
 {
     class ChangeSlot : Command
@@ -33,10 +30,7 @@ namespace MinecraftClient.Commands
                     {
                         return Translations.Get("cmd.changeSlot.changed", (slot+=1));
                     }
-                    else
-                    {
-                        return Translations.Get("cmd.changeSlot.fail");
-                    }
+                    return Translations.Get("cmd.changeSlot.fail");
                 }
             }
             return GetCmdDescTranslated();

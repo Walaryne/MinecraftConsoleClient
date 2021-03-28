@@ -1,4 +1,4 @@
-using System;
+
 /*
 3.3.10. NULL RDATA format (EXPERIMENTAL)
 

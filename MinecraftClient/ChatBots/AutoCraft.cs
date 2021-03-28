@@ -1,30 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
+using System.Linq;
 using MinecraftClient.Inventory;
 using MinecraftClient.Mapping;
-
 namespace MinecraftClient.ChatBots
 {
     class AutoCraft : ChatBot
     {
-        private bool waitingForMaterials = false;
-        private bool waitingForUpdate = false;
-        private bool waitingForTable = false;
-        private bool craftingFailed = false;
+        private bool waitingForMaterials;
+        private bool waitingForUpdate;
+        private bool waitingForTable;
+        private bool craftingFailed;
         private int inventoryInUse = -2;
-        private int index = 0;
+        private int index;
         private Recipe recipeInUse;
         private List<ActionStep> actionSteps = new List<ActionStep>();
 
-        private Location tableLocation = new Location();
+        private Location tableLocation;
         private bool abortOnFailure = true;
         private int updateDebounceValue = 2;
-        private int updateDebounce = 0;
+        private int updateDebounce;
         private int updateTimeoutValue = 10;
-        private int updateTimeout = 0;
+        private int updateTimeout;
         private string timeoutAction = "unspecified";
 
         private string configPath = @"autocraft\config.ini";
@@ -206,7 +204,7 @@ namespace MinecraftClient.ChatBots
                                 PrepareCrafting(recipes[name]);
                                 return "";
                             }
-                            else return Translations.Get("bot.autoCraft.recipe_not_exist");
+                            return Translations.Get("bot.autoCraft.recipe_not_exist");
                         }
                         else return Translations.Get("bot.autoCraft.no_recipe_name");
                     case "stop":
@@ -218,7 +216,7 @@ namespace MinecraftClient.ChatBots
                         return GetHelp();
                 }
             }
-            else return GetHelp();
+            return GetHelp();
         }
 
         private string GetHelp()
@@ -311,8 +309,8 @@ namespace MinecraftClient.ChatBots
             }
 
             // local variable for use in parsing config
-            string section = "";
-            Dictionary<string, Recipe> recipes = new Dictionary<string, Recipe>();
+            var section = "";
+            var recipes = new Dictionary<string, Recipe>();
 
             foreach (string l in content)
             {
@@ -390,7 +388,7 @@ namespace MinecraftClient.ChatBots
         {
             if (key.StartsWith("slot"))
             {
-                int slot = Convert.ToInt32(key[key.Length - 1].ToString());
+                var slot = Convert.ToInt32(key[key.Length - 1].ToString());
                 if (slot > 0 && slot < 10)
                 {
                     if (recipes.ContainsKey(lastRecipe))
@@ -404,12 +402,11 @@ namespace MinecraftClient.ChatBots
                             }
                             else
                             {
-                                recipes[lastRecipe].Materials = new Dictionary<int, ItemType>()
-                                    {
+                                recipes[lastRecipe].Materials = new Dictionary<int, ItemType>
+                                {
                                         { slot, itemType }
                                     };
                             }
-                            return;
                         }
                         else
                         {
@@ -562,7 +559,7 @@ namespace MinecraftClient.ChatBots
                 }
             }
 
-            foreach (KeyValuePair<int, ItemType> slot in recipe.Materials)
+            foreach (var slot in recipe.Materials)
             {
                 // Steps for moving items from inventory to crafting area
                 actionSteps.Add(new ActionStep(ActionType.LeftClick, inventoryInUse, slot.Value));
@@ -657,7 +654,6 @@ namespace MinecraftClient.ChatBots
                             && GetInventories()[step.InventoryID].Items[0].Type == step.ItemType)
                         {
                             // OK
-                            break;
                         }
                         else
                         {
@@ -728,13 +724,13 @@ namespace MinecraftClient.ChatBots
             if (GetInventories().ContainsKey(inventoryId))
             {
                 var inventory = GetInventories()[inventoryId];
-                int areaStart = 1;
-                int areaEnd = 4;
+                var areaStart = 1;
+                var areaEnd = 4;
                 if (inventory.Type == ContainerType.Crafting)
                 {
                     areaEnd = 9;
                 }
-                List<int> emptySlots = inventory.GetEmpytSlots().Where(s => s > 9).ToList();
+                var emptySlots = inventory.GetEmpytSlots().Where(s => s > 9).ToList();
                 for (int i = areaStart; i <= areaEnd; i++)
                 {
                     if (inventory.Items.ContainsKey(i))

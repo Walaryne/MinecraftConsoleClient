@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.IO;
-
 namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 {
     public static class PacketPaletteHelper
@@ -33,9 +29,9 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         public static void UpdatePacketIdByItemPosition(PacketTypePalette palette, string outputFile)
         {
             // I am just too tired to create another full .cs file so... please just copy and paste
-            List<string> lines = new List<string>();
+            var lines = new List<string>();
             lines.Add("=== Inbound Packets ===");
-            int i = 0;
+            var i = 0;
             foreach(var t in palette.GetMappingIn())
             {
                 lines.Add(string.Format("{{ 0x{0}, {1} }},", i.ToString("X2"), t.Value));
@@ -78,16 +74,16 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
         public static void UpdatePacketPositionToAscending(PacketTypePalette palette, string outputFile)
         {
             // I am just too tired to create another full .cs file so... please just copy and paste
-            List<string> lines = new List<string>();
+            var lines = new List<string>();
             lines.Add("=== Inbound Packets ===");
-            for (int i = 0; i < palette.GetMappingIn().Count; i++)
+            for (var i = 0; i < palette.GetMappingIn().Count; i++)
             {
                 lines.Add(string.Format("{{ 0x{0}, {1} }},", i.ToString("X2"), palette.GetMappingIn()[i]));
             }
             lines.Add("=== End of Inbound ===");
             lines.Add("");
             lines.Add("=== Outbound Packets ===");
-            for (int i = 0; i < palette.GetMappingOut().Count; i++)
+            for (var i = 0; i < palette.GetMappingOut().Count; i++)
             {
                 lines.Add(string.Format("{{ 0x{0}, {1} }},", i.ToString("X2"), palette.GetMappingOut()[i]));
             }
@@ -119,7 +115,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             const string TAB = "    ";
             const string TAB2 = "        ";
             const string TAB3 = "            ";
-            List<string> lines = new List<string>();
+            var lines = new List<string>();
             lines.Add("using System;");
             lines.Add("using System.Collections.Generic;");
             lines.Add("using System.Linq;");
@@ -131,7 +127,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             lines.Add(TAB + "{");
             lines.Add(TAB2 + "private Dictionary<int, PacketTypesIn> typeIn = new Dictionary<int, PacketTypesIn>()");
             lines.Add(TAB2 + "{");
-            for (int i = 0; i < pIn.Count; i++)
+            for (var i = 0; i < pIn.Count; i++)
             {
                 lines.Add(TAB3 + string.Format("{{ 0x{0}, PacketTypesIn.{1} }},", i.ToString("X2"), pIn[i]));
             }
@@ -139,7 +135,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             lines.Add("");
             lines.Add(TAB2 + "private Dictionary<int, PacketTypesOut> typeOut = new Dictionary<int, PacketTypesOut>()");
             lines.Add(TAB2 + "{");
-            for (int i = 0; i < pOut.Count; i++)
+            for (var i = 0; i < pOut.Count; i++)
             {
                 lines.Add(TAB3 + string.Format("{{ 0x{0}, PacketTypesOut.{1} }},", i.ToString("X2"), pOut[i]));
             }

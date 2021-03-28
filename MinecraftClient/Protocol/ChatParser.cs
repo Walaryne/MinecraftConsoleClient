@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Net;
 using System.Text;
-
 namespace MinecraftClient.Protocol
 {
     /// <summary>
@@ -55,7 +55,7 @@ namespace MinecraftClient.Protocol
         /// <summary>
         /// Specify whether translation rules have been loaded
         /// </summary>
-        private static bool RulesInitialized = false;
+        private static bool RulesInitialized;
 
         /// <summary>
         /// Set of translation rules for formatting text
@@ -84,32 +84,32 @@ namespace MinecraftClient.Protocol
             TranslationRules["commands.message.display.outgoing"] = "§7You whisper to %s: %s";
 
             //Language file in a subfolder, depending on the language setting
-            if (!System.IO.Directory.Exists("lang"))
-                System.IO.Directory.CreateDirectory("lang");
+            if (!Directory.Exists("lang"))
+                Directory.CreateDirectory("lang");
 
             string Language_File = "lang" + (Program.isUsingMono ? '/' : '\\') + Settings.Language + ".lang";
 
             //File not found? Try downloading language file from Mojang's servers?
-            if (!System.IO.File.Exists(Language_File))
+            if (!File.Exists(Language_File))
             {
                 ConsoleIO.WriteLineFormatted(Translations.Get("chat.download", Settings.Language));
                 try
                 {
                     string assets_index = DownloadString(Settings.TranslationsFile_Website_Index);
-                    string[] tmp = assets_index.Split(new string[] { "minecraft/lang/" + Settings.Language.ToLower() + ".json" }, StringSplitOptions.None);
-                    tmp = tmp[1].Split(new string[] { "hash\": \"" }, StringSplitOptions.None);
+                    string[] tmp = assets_index.Split(new[] { "minecraft/lang/" + Settings.Language.ToLower() + ".json" }, StringSplitOptions.None);
+                    tmp = tmp[1].Split(new[] { "hash\": \"" }, StringSplitOptions.None);
                     string hash = tmp[1].Split('"')[0]; //Translations file identifier on Mojang's servers
                     string translation_file_location = Settings.TranslationsFile_Website_Download + '/' + hash.Substring(0, 2) + '/' + hash;
                     if (Settings.DebugMessages)
                         ConsoleIO.WriteLineFormatted(Translations.Get("chat.request", translation_file_location));
 
-                    StringBuilder stringBuilder = new StringBuilder();
-                    foreach (KeyValuePair<string, Json.JSONData> entry in Json.ParseJson(DownloadString(translation_file_location)).Properties)
+                    var stringBuilder = new StringBuilder();
+                    foreach (var entry in Json.ParseJson(DownloadString(translation_file_location)).Properties)
                     {
                         stringBuilder.Append(entry.Key + "=" + entry.Value.StringValue + Environment.NewLine);
                     }
 
-                    System.IO.File.WriteAllText(Language_File, stringBuilder.ToString());
+                    File.WriteAllText(Language_File, stringBuilder.ToString());
                     ConsoleIO.WriteLineFormatted(Translations.Get("chat.done", Language_File));
                 }
                 catch
@@ -119,17 +119,17 @@ namespace MinecraftClient.Protocol
             }
 
             //Download Failed? Defaulting to en_GB.lang if the game is installed
-            if (!System.IO.File.Exists(Language_File) //Try en_GB.lang
-              && System.IO.File.Exists(Settings.TranslationsFile_FromMCDir))
+            if (!File.Exists(Language_File) //Try en_GB.lang
+              && File.Exists(Settings.TranslationsFile_FromMCDir))
             {
                 Language_File = Settings.TranslationsFile_FromMCDir;
                 Translations.WriteLineFormatted("chat.from_dir");
             }
 
             //Load the external dictionnary of translation rules or display an error message
-            if (System.IO.File.Exists(Language_File))
+            if (File.Exists(Language_File))
             {
-                string[] translations = System.IO.File.ReadAllLines(Language_File);
+                string[] translations = File.ReadAllLines(Language_File);
                 foreach (string line in translations)
                 {
                     if (line.Length > 0)
@@ -163,10 +163,10 @@ namespace MinecraftClient.Protocol
             if (!RulesInitialized) { InitRules(); RulesInitialized = true; }
             if (TranslationRules.ContainsKey(rulename))
             {
-                int using_idx = 0;
+                var using_idx = 0;
                 string rule = TranslationRules[rulename];
-                StringBuilder result = new StringBuilder();
-                for (int i = 0; i < rule.Length; i++)
+                var result = new StringBuilder();
+                for (var i = 0; i < rule.Length; i++)
                 {
                     if (rule[i] == '%' && i + 1 < rule.Length)
                     {
@@ -201,7 +201,7 @@ namespace MinecraftClient.Protocol
                 }
                 return result.ToString();
             }
-            else return "[" + rulename + "] " + String.Join(" ", using_data);
+            return "[" + rulename + "] " + String.Join(" ", using_data);
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace MinecraftClient.Protocol
         /// <returns>returns the Minecraft-formatted string</returns>
         private static string JSONData2String(Json.JSONData data, string colorcode, List<string> links)
         {
-            string extra_result = "";
+            var extra_result = "";
             switch (data.Type)
             {
                 case Json.JSONData.DataType.Object:
@@ -234,7 +234,7 @@ namespace MinecraftClient.Protocol
                      }
                     if (data.Properties.ContainsKey("extra"))
                     {
-                        Json.JSONData[] extras = data.Properties["extra"].DataArray.ToArray();
+                        var extras = data.Properties["extra"].DataArray.ToArray();
                         foreach (Json.JSONData item in extras)
                             extra_result = extra_result + JSONData2String(item, colorcode, links) + "§r";
                     }
@@ -244,13 +244,13 @@ namespace MinecraftClient.Protocol
                     }
                     else if (data.Properties.ContainsKey("translate"))
                     {
-                        List<string> using_data = new List<string>();
+                        var using_data = new List<string>();
                         if (data.Properties.ContainsKey("using") && !data.Properties.ContainsKey("with"))
                             data.Properties["with"] = data.Properties["using"];
                         if (data.Properties.ContainsKey("with"))
                         {
-                            Json.JSONData[] array = data.Properties["with"].DataArray.ToArray();
-                            for (int i = 0; i < array.Length; i++)
+                            var array = data.Properties["with"].DataArray.ToArray();
+                            for (var i = 0; i < array.Length; i++)
                             {
                                 using_data.Add(JSONData2String(array[i], colorcode, links));
                             }
@@ -260,7 +260,7 @@ namespace MinecraftClient.Protocol
                     else return extra_result;
 
                 case Json.JSONData.DataType.Array:
-                    string result = "";
+                    var result = "";
                     foreach (Json.JSONData item in data.DataArray)
                     {
                         result += JSONData2String(item, colorcode, links);
@@ -281,10 +281,10 @@ namespace MinecraftClient.Protocol
         /// <returns>Returns resource data if success, otherwise a WebException is raised</returns>
         private static string DownloadString(string url)
         {
-            System.Net.HttpWebRequest myRequest = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
+            var myRequest = (HttpWebRequest)WebRequest.Create(url);
             myRequest.Method = "GET";
-            System.Net.WebResponse myResponse = myRequest.GetResponse();
-            System.IO.StreamReader sr = new System.IO.StreamReader(myResponse.GetResponseStream(), System.Text.Encoding.UTF8);
+            WebResponse myResponse = myRequest.GetResponse();
+            var sr = new StreamReader(myResponse.GetResponseStream(), Encoding.UTF8);
             string result = sr.ReadToEnd();
             sr.Close();
             myResponse.Close();

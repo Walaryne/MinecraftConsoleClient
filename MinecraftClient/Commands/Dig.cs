@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MinecraftClient.Mapping;
-
 namespace MinecraftClient.Commands
 {
     public class Dig : Command
@@ -27,20 +24,20 @@ namespace MinecraftClient.Commands
                         int x = int.Parse(args[0]);
                         int y = int.Parse(args[1]);
                         int z = int.Parse(args[2]);
-                        Location blockToBreak = new Location(x, y, z);
+                        var blockToBreak = new Location(x, y, z);
                         if (blockToBreak.DistanceSquared(handler.GetCurrentLocation().EyesLocation()) > 25)
                             return Translations.Get("cmd.dig.too_far");
                         if (handler.GetWorld().GetBlock(blockToBreak).Type == Material.Air)
                             return Translations.Get("cmd.dig.no_block");
                         if (handler.DigBlock(blockToBreak))
                             return Translations.Get("cmd.dig.dig", x, y, z);
-                        else return "cmd.dig.fail";
+                        return "cmd.dig.fail";
                     }
                     catch (FormatException) { return GetCmdDescTranslated(); }
                 }
-                else return GetCmdDescTranslated();
+                return GetCmdDescTranslated();
             }
-            else return GetCmdDescTranslated();
+            return GetCmdDescTranslated();
         }
     }
 }

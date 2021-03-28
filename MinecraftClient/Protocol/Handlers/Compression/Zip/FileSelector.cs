@@ -48,12 +48,14 @@
 
 
 using System;
-using System.IO;
-using System.Text;
-using System.Reflection;
-using System.ComponentModel;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 #if SILVERLIGHT
 using System.Linq;
 #endif
@@ -106,7 +108,7 @@ namespace Ionic
         }
         internal abstract bool Evaluate(string filename);
 
-        [System.Diagnostics.Conditional("SelectorTrace")]
+        [Conditional("SelectorTrace")]
         protected static void CriterionTrace(string format, params object[] args)
         {
             //System.Console.WriteLine("  " + format, args);
@@ -121,22 +123,22 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("size ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(Size.ToString());
             return sb.ToString();
         }
 
         internal override bool Evaluate(string filename)
         {
-            System.IO.FileInfo fi = new System.IO.FileInfo(filename);
+            var fi = new FileInfo(filename);
             CriterionTrace("SizeCriterion::Evaluate('{0}' [{1}])",
-                           filename, this.ToString());
+                           filename, ToString());
             return _Evaluate(fi.Length);
         }
 
         private bool _Evaluate(Int64 Length)
         {
-            bool result = false;
+            var result = false;
             switch (Operator)
             {
                 case ComparisonOperator.GreaterThanOrEqualTo:
@@ -175,7 +177,7 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(Which.ToString()).Append(" ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(Time.ToString("yyyy-MM-dd-HH:mm:ss"));
             return sb.ToString();
         }
@@ -186,13 +188,13 @@ namespace Ionic
             switch (Which)
             {
                 case WhichTime.atime:
-                    x = System.IO.File.GetLastAccessTime(filename).ToUniversalTime();
+                    x = File.GetLastAccessTime(filename).ToUniversalTime();
                     break;
                 case WhichTime.mtime:
-                    x = System.IO.File.GetLastWriteTime(filename).ToUniversalTime();
+                    x = File.GetLastWriteTime(filename).ToUniversalTime();
                     break;
                 case WhichTime.ctime:
-                    x = System.IO.File.GetCreationTime(filename).ToUniversalTime();
+                    x = File.GetCreationTime(filename).ToUniversalTime();
                     break;
                 default:
                     throw new ArgumentException("Operator");
@@ -204,7 +206,7 @@ namespace Ionic
 
         private bool _Evaluate(DateTime x)
         {
-            bool result = false;
+            var result = false;
             switch (Operator)
             {
                 case ComparisonOperator.GreaterThanOrEqualTo:
@@ -274,7 +276,7 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("name ").Append(EnumUtil.GetDescription(Operator))
                 .Append(" '")
                 .Append(_MatchingFileSpec)
@@ -296,7 +298,7 @@ namespace Ionic
             // No slash in the pattern implicitly means recurse, which means compare to
             // filename only, not full path.
             String f = (_MatchingFileSpec.IndexOf('\\') == -1)
-                ? System.IO.Path.GetFileName(fullpath)
+                ? Path.GetFileName(fullpath)
                 : fullpath; // compare to fullpath
 
             bool result = _re.IsMatch(f);
@@ -329,7 +331,7 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("type ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(AttributeString);
             return sb.ToString();
         }
@@ -358,7 +360,7 @@ namespace Ionic
         {
             get
             {
-                string result = "";
+                var result = "";
                 if ((_Attributes & FileAttributes.Hidden) != 0)
                     result += "H";
                 if ((_Attributes & FileAttributes.System) != 0)
@@ -427,14 +429,14 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("attributes ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(AttributeString);
             return sb.ToString();
         }
 
         private bool _EvaluateOne(FileAttributes fileAttrs, FileAttributes criterionAttrs)
         {
-            bool result = false;
+            var result = false;
             if ((_Attributes & criterionAttrs) == criterionAttrs)
                 result = ((fileAttrs & criterionAttrs) == criterionAttrs);
             else
@@ -457,7 +459,7 @@ namespace Ionic
 #if NETCF
             FileAttributes fileAttrs = NetCfFile.GetAttributes(filename);
 #else
-            FileAttributes fileAttrs = System.IO.File.GetAttributes(filename);
+            FileAttributes fileAttrs = File.GetAttributes(filename);
 #endif
 
             return _Evaluate(fileAttrs);
@@ -531,7 +533,7 @@ namespace Ionic
 
         public override String ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("(")
             .Append((Left != null) ? Left.ToString() : "null")
             .Append(" ")
@@ -920,46 +922,46 @@ namespace Ionic
             string[][] prPairs =
                 {
                     // A. opening double parens - insert a space between them
-                    new string[] { @"([^']*)\(\(([^']+)", "$1( ($2" },
+                    new[] { @"([^']*)\(\(([^']+)", "$1( ($2" },
 
                     // B. closing double parens - insert a space between
-                    new string[] { @"(.)\)\)", "$1) )" },
+                    new[] { @"(.)\)\)", "$1) )" },
 
                     // C. single open paren with a following word - insert a space between
-                    new string[] { @"\((\S)", "( $1" },
+                    new[] { @"\((\S)", "( $1" },
 
                     // D. single close paren with a preceding word - insert a space between the two
-                    new string[] { @"(\S)\)", "$1 )" },
+                    new[] { @"(\S)\)", "$1 )" },
 
                     // E. close paren at line start?, insert a space before the close paren
                     // this seems like a degenerate case.  I don't recall why it's here.
-                    new string[] { @"^\)", " )" },
+                    new[] { @"^\)", " )" },
 
                     // F. a word (likely a conjunction) followed by an open paren - insert a space between
-                    new string[] { @"(\S)\(", "$1 (" },
+                    new[] { @"(\S)\(", "$1 (" },
 
                     // G. single close paren followed by word - insert a paren after close paren
-                    new string[] { @"\)(\S)", ") $1" },
+                    new[] { @"\)(\S)", ") $1" },
 
                     // H. insert space between = and a following single quote
                     //new string[] { @"(=|!=)('[^']*')", "$1 $2" },
-                    new string[] { @"(=)('[^']*')", "$1 $2" },
+                    new[] { @"(=)('[^']*')", "$1 $2" },
 
                     // I. insert space between property names and the following operator
                     //new string[] { @"([^ ])([><(?:!=)=])", "$1 $2" },
-                    new string[] { @"([^ !><])(>|<|!=|=)", "$1 $2" },
+                    new[] { @"([^ !><])(>|<|!=|=)", "$1 $2" },
 
                     // J. insert spaces between operators and the following values
                     //new string[] { @"([><(?:!=)=])([^ ])", "$1 $2" },
-                    new string[] { @"(>|<|!=|=)([^ =])", "$1 $2" },
+                    new[] { @"(>|<|!=|=)([^ =])", "$1 $2" },
 
                     // K. replace fwd slash with backslash
-                    new string[] { @"/", "\\" },
+                    new[] { @"/", "\\" },
                 };
 
             string interim = source;
 
-            for (int i=0; i < prPairs.Length; i++)
+            for (var i=0; i < prPairs.Length; i++)
             {
                 //char caseIdx = (char)('A' + i);
                 string pattern = RegexAssertions.PrecededByEvenNumberOfSingleQuotes +
@@ -1011,14 +1013,14 @@ namespace Ionic
 
             SelectionCriterion current = null;
 
-            LogicalConjunction pendingConjunction = LogicalConjunction.NONE;
+            var pendingConjunction = LogicalConjunction.NONE;
 
             ParseState state;
-            var stateStack = new System.Collections.Generic.Stack<ParseState>();
-            var critStack = new System.Collections.Generic.Stack<SelectionCriterion>();
+            var stateStack = new Stack<ParseState>();
+            var critStack = new Stack<SelectionCriterion>();
             stateStack.Push(ParseState.Start);
 
-            for (int i = 0; i < tokens.Length; i++)
+            for (var i = 0; i < tokens.Length; i++)
             {
                 string tok1 = tokens[i].ToLower();
                 switch (tok1)
@@ -1144,7 +1146,7 @@ namespace Ionic
                             if (tokens.Length <= i + 2)
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
-                            ComparisonOperator c =
+                            var c =
                                 (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]);
 
                             if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
@@ -1184,7 +1186,7 @@ namespace Ionic
                             if (tokens.Length <= i + 2)
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
-                            ComparisonOperator c =
+                            var c =
                                 (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]);
 
                             if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
@@ -1198,11 +1200,11 @@ namespace Ionic
                                     };
 #else
                             current = (tok1 == "type")
-                                ? (SelectionCriterion) new TypeCriterion
-                                    {
-                                        AttributeString = tokens[i + 2],
-                                        Operator = c
-                                    }
+                                ? new TypeCriterion
+                                {
+                                    AttributeString = tokens[i + 2],
+                                    Operator = c
+                                }
                                 : (SelectionCriterion) new AttributesCriterion
                                     {
                                         AttributeString = tokens[i + 2],
@@ -1259,7 +1261,7 @@ namespace Ionic
         /// selection criteria for this instance. </returns>
         public override String ToString()
         {
-            return "FileSelector("+_Criterion.ToString()+")";
+            return "FileSelector("+_Criterion+")";
         }
 
 
@@ -1271,11 +1273,11 @@ namespace Ionic
             return result;
         }
 
-        [System.Diagnostics.Conditional("SelectorTrace")]
+        [Conditional("SelectorTrace")]
         private void SelectorTrace(string format, params object[] args)
         {
             if (_Criterion != null && _Criterion.Verbose)
-                System.Console.WriteLine(format, args);
+                Console.WriteLine(format, args);
         }
 
         /// <summary>
@@ -1297,7 +1299,7 @@ namespace Ionic
         ///   A collection of strings containing fully-qualified pathnames of files
         ///   that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.Generic.ICollection<String> SelectFiles(String directory)
+        public ICollection<String> SelectFiles(String directory)
         {
             return SelectFiles(directory, false);
         }
@@ -1329,7 +1331,7 @@ namespace Ionic
         ///   A collection of strings containing fully-qualified pathnames of files
         ///   that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.ObjectModel.ReadOnlyCollection<String>
+        public ReadOnlyCollection<String>
             SelectFiles(String directory,
                         bool recurseDirectories)
         {
@@ -1356,7 +1358,7 @@ namespace Ionic
                         String[] dirnames = Directory.GetDirectories(directory);
                         foreach (String dir in dirnames)
                         {
-                            if (this.TraverseReparsePoints
+                            if (TraverseReparsePoints
 #if !SILVERLIGHT
                                 || ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0)
 #endif
@@ -1364,17 +1366,17 @@ namespace Ionic
                             {
                                 // workitem 10191
                                 if (Evaluate(dir)) list.Add(dir);
-                                list.AddRange(this.SelectFiles(dir, recurseDirectories));
+                                list.AddRange(SelectFiles(dir, recurseDirectories));
                             }
                         }
                     }
                 }
             }
             // can get System.UnauthorizedAccessException here
-            catch (System.UnauthorizedAccessException)
+            catch (UnauthorizedAccessException)
             {
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
             }
 
@@ -1397,14 +1399,13 @@ namespace Ionic
         /// </summary>
         /// <param name="value">The Enum to get the description for</param>
         /// <returns></returns>
-        internal static string GetDescription(System.Enum value)
+        internal static string GetDescription(Enum value)
         {
             FieldInfo fi = value.GetType().GetField(value.ToString());
             var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
             if (attributes.Length > 0)
                 return attributes[0].Description;
-            else
-                return value.ToString();
+            return value.ToString();
         }
 
         /// <summary>
@@ -1471,7 +1472,7 @@ namespace Ionic
 #if SILVERLIGHT
             foreach (System.Enum enumVal in GetEnumValues(enumType))
 #else
-            foreach (System.Enum enumVal in System.Enum.GetValues(enumType))
+            foreach (Enum enumVal in Enum.GetValues(enumType))
 #endif
             {
                 string description = GetDescription(enumVal);
@@ -1481,7 +1482,7 @@ namespace Ionic
                     return enumVal;
             }
 
-            return System.Enum.Parse(enumType, stringRepresentation, ignoreCase);
+            return Enum.Parse(enumType, stringRepresentation, ignoreCase);
         }
     }
 

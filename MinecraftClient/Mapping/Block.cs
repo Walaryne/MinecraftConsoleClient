@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MinecraftClient.Mapping.BlockPalettes;
-
 namespace MinecraftClient.Mapping
 {
     /// <summary>
@@ -97,9 +93,9 @@ namespace MinecraftClient.Mapping
         {
             if (!Palette.IdHasMetadata)
                 throw new InvalidOperationException("Current global Palette does not support block Metadata");
-            this.blockIdAndMeta = 0;
-            this.BlockId = type;
-            this.BlockMeta = metadata;
+            blockIdAndMeta = 0;
+            BlockId = type;
+            BlockMeta = metadata;
         }
 
         /// <summary>
@@ -108,7 +104,7 @@ namespace MinecraftClient.Mapping
         /// <param name="typeAndMeta">Type and metadata packed in the same value OR block state</param>
         public Block(ushort typeAndMeta)
         {
-            this.blockIdAndMeta = typeAndMeta;
+            blockIdAndMeta = typeAndMeta;
         }
 
         /// <summary>
@@ -116,7 +112,7 @@ namespace MinecraftClient.Mapping
         /// </summary>
         public override string ToString()
         {
-            return BlockId.ToString() + (BlockMeta != 0 ? ":" + BlockMeta.ToString() : "");
+            return BlockId + (BlockMeta != 0 ? ":" + BlockMeta : "");
         }
     }
 }

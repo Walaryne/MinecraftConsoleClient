@@ -25,14 +25,13 @@
 
 using System;
 using System.Runtime.Serialization;
-
 namespace Starksoft.Net.Proxy
 {
 
     /// <summary>
     /// This exception is thrown when a general, unexpected proxy error.   
     /// </summary>
-    [Serializable()]
+    [Serializable]
     public class ProxyException : Exception
     {
         /// <summary>

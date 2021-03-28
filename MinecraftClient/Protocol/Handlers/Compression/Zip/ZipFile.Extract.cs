@@ -27,8 +27,6 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
-
 namespace Ionic.Zip
 {
 
@@ -172,14 +170,14 @@ namespace Ionic.Zip
         /// <para>
         /// The action to take when an extract would overwrite an existing file
         /// applies to all entries.  If you want to set this on a per-entry basis,
-        /// then you must use <see cref="ZipEntry.Extract(String,
+        /// then you must use <see cref="ZipEntry.Extract(string,
         /// ExtractExistingFileAction)" /> or one of the similar methods.
         /// </para>
         ///
         /// <para>
         /// Calling this method is equivalent to setting the <see
         /// cref="ExtractExistingFile"/> property and then calling <see
-        /// cref="ExtractAll(String)"/>.
+        /// cref="ExtractAll(string)"/>.
         /// </para>
         ///
         /// <para>
@@ -215,7 +213,7 @@ namespace Ionic.Zip
         /// <param name="extractExistingFile">
         /// The action to take if extraction would overwrite an existing file.
         /// </param>
-        /// <seealso cref="ExtractSelectedEntries(String,ExtractExistingFileAction)"/>
+        /// <seealso cref="ExtractSelectedEntries(string,ExtractExistingFileAction)"/>
         public void ExtractAll(string path, ExtractExistingFileAction extractExistingFile)
         {
             ExtractExistingFile = extractExistingFile;
@@ -231,14 +229,14 @@ namespace Ionic.Zip
             {
                 OnExtractAllStarted(path);
 
-                int n = 0;
+                var n = 0;
                 foreach (ZipEntry e in _entries.Values)
                 {
                     if (header)
                     {
                         StatusMessageTextWriter.WriteLine("\n{1,-22} {2,-8} {3,4}   {4,-8}  {0}",
                                   "Name", "Modified", "Size", "Ratio", "Packed");
-                        StatusMessageTextWriter.WriteLine(new System.String('-', 72));
+                        StatusMessageTextWriter.WriteLine(new String('-', 72));
                         header = false;
                     }
                     if (Verbose)
@@ -255,7 +253,7 @@ namespace Ionic.Zip
                     e.Password = _Password;  // this may be null
                     OnExtractEntry(n, true, e, path);
                     if (overrideExtractExistingProperty)
-                        e.ExtractExistingFile = this.ExtractExistingFile;
+                        e.ExtractExistingFile = ExtractExistingFile;
                     e.Extract(path);
                     n++;
                     OnExtractEntry(n, false, e, path);

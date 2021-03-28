@@ -1,5 +1,4 @@
 ﻿using Microsoft.Win32;
-
 namespace MinecraftClient.WinAPI
 {
     /// <summary>

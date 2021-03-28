@@ -16,5 +16,5 @@
         /// Cache session information in a SessionCache file to share session tokens between different MCC instances.
         /// </summary>
         Disk
-    };
+    }
 }

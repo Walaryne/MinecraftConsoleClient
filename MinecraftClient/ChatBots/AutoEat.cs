@@ -1,17 +1,12 @@
 ﻿using MinecraftClient.Inventory;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.ChatBots
 {
     class AutoEat : ChatBot
     {
-        byte LastSlot = 0;
-        public static bool Eating = false;
+        byte LastSlot;
+        public static bool Eating;
         private int HungerThreshold = 6;
-        private int DelayCounter = 0;
+        private int DelayCounter;
 
         public AutoEat(int Threshold)
         {
@@ -61,7 +56,7 @@ namespace MinecraftClient.ChatBots
         public bool FindFoodAndEat()
         {
             Container inventory = GetPlayerInventory();
-            bool found = false;
+            var found = false;
             byte CurrentSlot = GetCurrentSlot();
             if (!Eating)
                 LastSlot = CurrentSlot;
@@ -72,7 +67,7 @@ namespace MinecraftClient.ChatBots
             }
             else
             {
-                for (int i = 36; i <= 44; i++)
+                for (var i = 36; i <= 44; i++)
                 {
                     if (!inventory.Items.ContainsKey(i)) continue;
                     if (inventory.Items[i].Type.IsFood())

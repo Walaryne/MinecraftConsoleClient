@@ -28,16 +28,14 @@
 
 using System;
 using System.IO;
-
 namespace Ionic.Zip
 {
-    internal class OffsetStream : System.IO.Stream, System.IDisposable
+    internal class OffsetStream : Stream, IDisposable
     {
         private Int64 _originalPosition;
         private Stream _innerStream;
 
         public OffsetStream(Stream s)
-            : base()
         {
             _originalPosition = s.Position;
             _innerStream = s;
@@ -88,7 +86,7 @@ namespace Ionic.Zip
         }
 
 
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             return _innerStream.Seek(_originalPosition + offset, origin) - _originalPosition;
         }

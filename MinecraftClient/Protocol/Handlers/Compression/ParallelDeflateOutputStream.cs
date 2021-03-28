@@ -26,11 +26,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using Ionic.Zlib;
+using System.Diagnostics;
 using System.IO;
-
-
+using System.Threading;
+using Ionic.Crc;
 namespace Ionic.Zlib
 {
     internal class WorkItem
@@ -45,19 +44,19 @@ namespace Ionic.Zlib
         public ZlibCodec compressor;
 
         public WorkItem(int size,
-                        Ionic.Zlib.CompressionLevel compressLevel,
+                        CompressionLevel compressLevel,
                         CompressionStrategy strategy,
                         int ix)
         {
-            this.buffer= new byte[size];
+            buffer= new byte[size];
             // alloc 5 bytes overhead for every block (margin of safety= 2)
             int n = size + ((size / 32768)+1) * 5 * 2;
-            this.compressed = new byte[n];
-            this.compressor = new ZlibCodec();
-            this.compressor.InitializeDeflate(compressLevel, false);
-            this.compressor.OutputBuffer = this.compressed;
-            this.compressor.InputBuffer = this.buffer;
-            this.index = ix;
+            compressed = new byte[n];
+            compressor = new ZlibCodec();
+            compressor.InitializeDeflate(compressLevel, false);
+            compressor.OutputBuffer = compressed;
+            compressor.InputBuffer = buffer;
+            index = ix;
         }
     }
 
@@ -98,16 +97,16 @@ namespace Ionic.Zlib
     ///
     /// </remarks>
     /// <seealso cref="Ionic.Zlib.DeflateStream" />
-    public class ParallelDeflateOutputStream : System.IO.Stream
+    public class ParallelDeflateOutputStream : Stream
     {
 
         private static readonly int IO_BUFFER_SIZE_DEFAULT = 64 * 1024;  // 128k
         private static readonly int BufferPairsPerCore = 4;
 
-        private System.Collections.Generic.List<WorkItem> _pool;
+        private List<WorkItem> _pool;
         private bool                        _leaveOpen;
         private bool                        emitting;
-        private System.IO.Stream            _outStream;
+        private Stream            _outStream;
         private int                         _maxBufferPairs;
         private int                         _bufferSize = IO_BUFFER_SIZE_DEFAULT;
         private AutoResetEvent              _newlyCompressedBlob;
@@ -121,12 +120,12 @@ namespace Ionic.Zlib
         private int                         _lastWritten;
         private int                         _latestCompressed;
         private int                         _Crc32;
-        private Ionic.Crc.CRC32             _runningCrc;
+        private CRC32             _runningCrc;
         private object                      _latestLock = new object();
-        private System.Collections.Generic.Queue<int>     _toWrite;
-        private System.Collections.Generic.Queue<int>     _toFill;
+        private Queue<int>     _toWrite;
+        private Queue<int>     _toFill;
         private Int64                       _totalBytesProcessed;
-        private Ionic.Zlib.CompressionLevel _compressLevel;
+        private CompressionLevel _compressLevel;
         private volatile Exception          _pendingException;
         private bool                        _handlingException;
         private object                      _eLock = new Object();  // protects _pendingException
@@ -220,7 +219,7 @@ namespace Ionic.Zlib
         /// </code>
         /// </example>
         /// <param name="stream">The stream to which compressed data will be written.</param>
-        public ParallelDeflateOutputStream(System.IO.Stream stream)
+        public ParallelDeflateOutputStream(Stream stream)
             : this(stream, CompressionLevel.Default, CompressionStrategy.Default, false)
         {
         }
@@ -234,7 +233,7 @@ namespace Ionic.Zlib
         /// </remarks>
         /// <param name="stream">The stream to which compressed data will be written.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
-        public ParallelDeflateOutputStream(System.IO.Stream stream, CompressionLevel level)
+        public ParallelDeflateOutputStream(Stream stream, CompressionLevel level)
             : this(stream, level, CompressionStrategy.Default, false)
         {
         }
@@ -251,7 +250,7 @@ namespace Ionic.Zlib
         /// <param name="leaveOpen">
         ///    true if the application would like the stream to remain open after inflation/deflation.
         /// </param>
-        public ParallelDeflateOutputStream(System.IO.Stream stream, bool leaveOpen)
+        public ParallelDeflateOutputStream(Stream stream, bool leaveOpen)
             : this(stream, CompressionLevel.Default, CompressionStrategy.Default, leaveOpen)
         {
         }
@@ -269,7 +268,7 @@ namespace Ionic.Zlib
         /// <param name="leaveOpen">
         ///    true if the application would like the stream to remain open after inflation/deflation.
         /// </param>
-        public ParallelDeflateOutputStream(System.IO.Stream stream, CompressionLevel level, bool leaveOpen)
+        public ParallelDeflateOutputStream(Stream stream, CompressionLevel level, bool leaveOpen)
             : this(stream, CompressionLevel.Default, CompressionStrategy.Default, leaveOpen)
         {
         }
@@ -293,18 +292,18 @@ namespace Ionic.Zlib
         /// <param name="leaveOpen">
         ///    true if the application would like the stream to remain open after inflation/deflation.
         /// </param>
-        public ParallelDeflateOutputStream(System.IO.Stream stream,
+        public ParallelDeflateOutputStream(Stream stream,
                                            CompressionLevel level,
                                            CompressionStrategy strategy,
                                            bool leaveOpen)
         {
             TraceOutput(TraceBits.Lifecycle | TraceBits.Session, "-------------------------------------------------------");
-            TraceOutput(TraceBits.Lifecycle | TraceBits.Session, "Create {0:X8}", this.GetHashCode());
+            TraceOutput(TraceBits.Lifecycle | TraceBits.Session, "Create {0:X8}", GetHashCode());
             _outStream = stream;
             _compressLevel= level;
             Strategy = strategy;
             _leaveOpen = leaveOpen;
-            this.MaxBufferPairs = 16; // default
+            MaxBufferPairs = 16; // default
         }
 
 
@@ -478,17 +477,17 @@ namespace Ionic.Zlib
         {
             _toWrite = new Queue<int>();
             _toFill = new Queue<int>();
-            _pool = new System.Collections.Generic.List<WorkItem>();
+            _pool = new List<WorkItem>();
             int nTasks = BufferPairsPerCore * Environment.ProcessorCount;
             nTasks = Math.Min(nTasks, _maxBufferPairs);
-            for(int i=0; i < nTasks; i++)
+            for(var i=0; i < nTasks; i++)
             {
                 _pool.Add(new WorkItem(_bufferSize, _compressLevel, Strategy, i));
                 _toFill.Enqueue(i);
             }
 
             _newlyCompressedBlob = new AutoResetEvent(false);
-            _runningCrc = new Ionic.Crc.CRC32();
+            _runningCrc = new CRC32();
             _currentlyFilling = -1;
             _lastFilled = -1;
             _lastWritten = -1;
@@ -523,7 +522,7 @@ namespace Ionic.Zlib
         /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            bool mustWait = false;
+            var mustWait = false;
 
             // This method does this:
             //   0. handles any pending exceptions
@@ -642,7 +641,6 @@ namespace Ionic.Zlib
             while (count > 0);  // until no more to write
 
             TraceOutput(TraceBits.WriteEnter, "Write    exit");
-            return;
         }
 
 
@@ -652,7 +650,7 @@ namespace Ionic.Zlib
             // After writing a series of compressed buffers, each one closed
             // with Flush.Sync, we now write the final one as Flush.Finish,
             // and then stop.
-            byte[] buffer = new byte[128];
+            var buffer = new byte[128];
             var compressor = new ZlibCodec();
             int rc = compressor.InitializeDeflate(_compressLevel, false);
             compressor.InputBuffer = null;
@@ -740,7 +738,7 @@ namespace Ionic.Zlib
         /// </remarks>
         public override void Close()
         {
-            TraceOutput(TraceBits.Session, "Close {0:X8}", this.GetHashCode());
+            TraceOutput(TraceBits.Session, "Close {0:X8}", GetHashCode());
 
             if (_pendingException != null)
             {
@@ -780,7 +778,7 @@ namespace Ionic.Zlib
         /// </remarks>
         new public void Dispose()
         {
-            TraceOutput(TraceBits.Lifecycle, "Dispose  {0:X8}", this.GetHashCode());
+            TraceOutput(TraceBits.Lifecycle, "Dispose  {0:X8}", GetHashCode());
             Close();
             _pool = null;
             Dispose(true);
@@ -841,7 +839,7 @@ namespace Ionic.Zlib
         public void Reset(Stream stream)
         {
             TraceOutput(TraceBits.Session, "-------------------------------------------------------");
-            TraceOutput(TraceBits.Session, "Reset {0:X8} firstDone({1})", this.GetHashCode(), _firstWriteDone);
+            TraceOutput(TraceBits.Session, "Reset {0:X8} firstDone({1})", GetHashCode(), _firstWriteDone);
 
             if (!_firstWriteDone) return;
 
@@ -856,7 +854,7 @@ namespace Ionic.Zlib
 
             _firstWriteDone = false;
             _totalBytesProcessed = 0L;
-            _runningCrc = new Ionic.Crc.CRC32();
+            _runningCrc = new CRC32();
             _isClosed= false;
             _currentlyFilling = -1;
             _lastFilled = -1;
@@ -1151,11 +1149,11 @@ namespace Ionic.Zlib
         private void _DeflateOne(Object wi)
         {
             // compress one buffer
-            WorkItem workitem = (WorkItem) wi;
+            var workitem = (WorkItem) wi;
             try
             {
                 int myItem = workitem.index;
-                Ionic.Crc.CRC32 crc = new Ionic.Crc.CRC32();
+                var crc = new CRC32();
 
                 // calc CRC on the buffer
                 crc.SlurpBlock(workitem.buffer, 0, workitem.inputBytesAvailable);
@@ -1183,7 +1181,7 @@ namespace Ionic.Zlib
                 }
                 _newlyCompressedBlob.Set();
             }
-            catch (System.Exception exc1)
+            catch (Exception exc1)
             {
                 lock(_eLock)
                 {
@@ -1200,7 +1198,7 @@ namespace Ionic.Zlib
         private bool DeflateOneSegment(WorkItem workitem)
         {
             ZlibCodec compressor = workitem.compressor;
-            int rc= 0;
+            var rc= 0;
             compressor.ResetDeflate();
             compressor.NextIn = 0;
 
@@ -1223,7 +1221,7 @@ namespace Ionic.Zlib
         }
 
 
-        [System.Diagnostics.ConditionalAttribute("Trace")]
+        [Conditional("Trace")]
         private void TraceOutput(TraceBits bits, string format, params object[] varParams)
         {
             if ((bits & _DesiredTrace) != 0)
@@ -1362,7 +1360,7 @@ namespace Ionic.Zlib
         ///   THIS METHOD ACTUALLY DID ANYTHING.
         /// </param>
         /// <returns>nothing. It always throws.</returns>
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotSupportedException();
         }

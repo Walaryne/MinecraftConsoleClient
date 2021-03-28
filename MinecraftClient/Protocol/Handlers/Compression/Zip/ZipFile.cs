@@ -39,8 +39,12 @@
 
 
 using System;
-using System.IO;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using Ionic.Zlib;
 using Interop = System.Runtime.InteropServices;
 
 
@@ -123,13 +127,13 @@ namespace Ionic.Zip
     ///
     /// </remarks>
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00005")]
-    [Interop.ComVisible(true)]
+    [Interop.ComVisibleAttribute(true)]
 #if !NETCF
-    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+    [Interop.ClassInterfaceAttribute(Interop.ClassInterfaceType.AutoDispatch)]
 #endif
     public partial class ZipFile :
-    System.Collections.IEnumerable,
-    System.Collections.Generic.IEnumerable<ZipEntry>,
+    IEnumerable,
+    IEnumerable<ZipEntry>,
     IDisposable
     {
 
@@ -400,7 +404,7 @@ namespace Ionic.Zip
         ///   information see <see
         ///   cref="Ionic.Zlib.CompressionStrategy">Ionic.Zlib.CompressionStrategy</see>.
         /// </remarks>
-        public Ionic.Zlib.CompressionStrategy Strategy
+        public CompressionStrategy Strategy
         {
             get { return _Strategy; }
             set { _Strategy = value; }
@@ -471,7 +475,7 @@ namespace Ionic.Zip
         ///    alone, and accept the default.
         ///  </para>
         /// </remarks>
-        public Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompressionLevel CompressionLevel
         {
             get;
             set;
@@ -486,7 +490,7 @@ namespace Ionic.Zip
         ///   </para>
         /// </remarks>
         /// <seealso cref="Ionic.Zip.CompressionMethod" />
-        public Ionic.Zip.CompressionMethod CompressionMethod
+        public CompressionMethod CompressionMethod
         {
             get
             {
@@ -959,20 +963,20 @@ namespace Ionic.Zip
         {
             get
             {
-                return (_alternateEncoding == System.Text.Encoding.GetEncoding("UTF-8")) &&
+                return (_alternateEncoding == Encoding.GetEncoding("UTF-8")) &&
                     (_alternateEncodingUsage == ZipOption.AsNecessary);
             }
             set
             {
                 if (value)
                 {
-                    _alternateEncoding = System.Text.Encoding.GetEncoding("UTF-8");
+                    _alternateEncoding = Encoding.GetEncoding("UTF-8");
                     _alternateEncodingUsage = ZipOption.AsNecessary;
 
                 }
                 else
                 {
-                    _alternateEncoding = Ionic.Zip.ZipFile.DefaultEncoding;
+                    _alternateEncoding = DefaultEncoding;
                     _alternateEncodingUsage = ZipOption.Never;
                 }
             }
@@ -1077,12 +1081,12 @@ namespace Ionic.Zip
         /// </remarks>
         /// <seealso cref="UseZip64WhenSaving"/>
         /// <seealso cref="OutputUsedZip64"/>
-        public Nullable<bool> RequiresZip64
+        public bool? RequiresZip64
         {
             get
             {
                 if (_entries.Count > 65534)
-                    return new Nullable<bool>(true);
+                    return true;
 
                 // If the <c>ZipFile</c> has not been saved or if the contents have changed, then
                 // it is not known if ZIP64 is required.
@@ -1091,10 +1095,10 @@ namespace Ionic.Zip
                 // Whether ZIP64 is required is knowable.
                 foreach (ZipEntry e in _entries.Values)
                 {
-                    if (e.RequiresZip64.Value) return new Nullable<bool>(true);
+                    if (e.RequiresZip64.Value) return true;
                 }
 
-                return new Nullable<bool>(false);
+                return false;
             }
         }
 
@@ -1136,7 +1140,7 @@ namespace Ionic.Zip
         /// </remarks>
         /// <seealso cref="UseZip64WhenSaving"/>
         /// <seealso cref="RequiresZip64"/>
-        public Nullable<bool> OutputUsedZip64
+        public bool? OutputUsedZip64
         {
             get
             {
@@ -1154,7 +1158,7 @@ namespace Ionic.Zip
         ///   This property will return null (Nothing in VB) if you've added an entry after reading
         ///   the zip file.
         /// </remarks>
-        public Nullable<bool> InputUsesZip64
+        public bool? InputUsesZip64
         {
             get
             {
@@ -1318,7 +1322,7 @@ namespace Ionic.Zip
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.DefaultEncoding">DefaultEncoding</seealso>
         [Obsolete("use AlternateEncoding instead.")]
-        public System.Text.Encoding ProvisionalAlternateEncoding
+        public Encoding ProvisionalAlternateEncoding
         {
             get
             {
@@ -1344,7 +1348,7 @@ namespace Ionic.Zip
         ///     on <see cref="AlternateEncodingUsage"/>.
         ///   </para>
         /// </remarks>
-        public System.Text.Encoding AlternateEncoding
+        public Encoding AlternateEncoding
         {
             get
             {
@@ -1380,7 +1384,7 @@ namespace Ionic.Zip
         /// known as IBM437.
         /// </summary>
         /// <seealso cref="Ionic.Zip.ZipFile.ProvisionalAlternateEncoding"/>
-        public static System.Text.Encoding DefaultEncoding
+        public static Encoding DefaultEncoding
         {
             get
             {
@@ -2321,11 +2325,11 @@ namespace Ionic.Zip
         ///     This static property is primarily useful for diagnostic purposes.
         ///   </para>
         /// </remarks>
-        public static System.Version LibraryVersion
+        public static Version LibraryVersion
         {
             get
             {
-                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                return Assembly.GetExecutingAssembly().GetName().Version;
             }
         }
 
@@ -2337,13 +2341,13 @@ namespace Ionic.Zip
 
         internal Stream StreamForDiskNumber(uint diskNumber)
         {
-            if (diskNumber + 1 == this._diskNumberWithCd ||
-                (diskNumber == 0 && this._diskNumberWithCd == 0))
+            if (diskNumber + 1 == _diskNumberWithCd ||
+                (diskNumber == 0 && _diskNumberWithCd == 0))
             {
                 //return (this.ReadStream as FileStream);
-                return this.ReadStream;
+                return ReadStream;
             }
-            return ZipSegmentedStream.ForReading(this._readName ?? this._name,
+            return ZipSegmentedStream.ForReading(_readName ?? _name,
                                                  diskNumber, _diskNumberWithCd);
         }
 
@@ -2356,14 +2360,14 @@ namespace Ionic.Zip
             if (_JustSaved)
             {
                 // read in the just-saved zip archive
-                using (ZipFile x = new ZipFile())
+                using (var x = new ZipFile())
                 {
                     // workitem 10735
                     x._readName = x._name = whileSaving
-                        ? (this._readName ?? this._name)
-                        : this._name;
-                    x.AlternateEncoding = this.AlternateEncoding;
-                    x.AlternateEncodingUsage = this.AlternateEncodingUsage;
+                        ? (_readName ?? _name)
+                        : _name;
+                    x.AlternateEncoding = AlternateEncoding;
+                    x.AlternateEncodingUsage = AlternateEncodingUsage;
                     ReadIntoInstance(x);
                     // copy the contents of the entries.
                     // cannot just replace the entries - the app may be holding them
@@ -2528,7 +2532,7 @@ namespace Ionic.Zip
         /// <param name="encoding">The Encoding is used as the default alternate
         /// encoding for entries with filenames or comments that cannot be encoded
         /// with the IBM437 code page. </param>
-        public ZipFile(string fileName, System.Text.Encoding encoding)
+        public ZipFile(string fileName, Encoding encoding)
         {
             try
             {
@@ -2622,7 +2626,7 @@ namespace Ionic.Zip
         /// The Encoding is used as the default alternate encoding for entries with
         /// filenames or comments that cannot be encoded with the IBM437 code page.
         /// </param>
-        public ZipFile(System.Text.Encoding encoding)
+        public ZipFile(Encoding encoding)
         {
             AlternateEncoding = encoding;
             AlternateEncodingUsage = ZipOption.Always;
@@ -2770,7 +2774,7 @@ namespace Ionic.Zip
         /// filenames or comments that cannot be encoded with the IBM437 code page.
         /// </param>
         public ZipFile(string fileName, TextWriter statusMessageWriter,
-                       System.Text.Encoding encoding)
+                       Encoding encoding)
         {
             try
             {
@@ -2840,7 +2844,7 @@ namespace Ionic.Zip
             _StatusMessageTextWriter = statusMessageWriter;
             _contentsChanged = true;
             AddDirectoryWillTraverseReparsePoints = true;  // workitem 8617
-            CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+            CompressionLevel = CompressionLevel.Default;
 #if !NETCF
             ParallelDeflateThreshold = 512 * 1024;
 #endif
@@ -2853,10 +2857,9 @@ namespace Ionic.Zip
                     ReadIntoInstance_Orig(this);
                 else
                     ReadIntoInstance(this);
-                this._fileAlreadyExists = true;
+                _fileAlreadyExists = true;
             }
 
-            return;
         }
         #endregion
 
@@ -3119,7 +3122,7 @@ namespace Ionic.Zip
         ///   The list of strings for the filenames contained within the Zip archive.
         /// </returns>
         ///
-        public System.Collections.Generic.ICollection<String> EntryFileNames
+        public ICollection<String> EntryFileNames
         {
             get
             {
@@ -3146,7 +3149,7 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         /// <seealso cref="EntriesSorted"/>
-        public System.Collections.Generic.ICollection<ZipEntry> Entries
+        public ICollection<ZipEntry> Entries
         {
             get
             {
@@ -3199,12 +3202,12 @@ namespace Ionic.Zip
         /// </example>
         ///
         /// <seealso cref="Entries"/>
-        public System.Collections.Generic.ICollection<ZipEntry> EntriesSorted
+        public ICollection<ZipEntry> EntriesSorted
         {
             get
             {
-                var coll = new System.Collections.Generic.List<ZipEntry>();
-                foreach (var e in this.Entries)
+                var coll = new List<ZipEntry>();
+                foreach (var e in Entries)
                 {
                     coll.Add(e);
                 }
@@ -3496,7 +3499,7 @@ namespace Ionic.Zip
         /// </param>
         protected virtual void Dispose(bool disposeManagedResources)
         {
-            if (!this._disposed)
+            if (!_disposed)
             {
                 if (disposeManagedResources)
                 {
@@ -3529,14 +3532,14 @@ namespace Ionic.Zip
 
 #if !NETCF
                     // workitem 10030
-                    if (this.ParallelDeflater != null)
+                    if (ParallelDeflater != null)
                     {
-                        this.ParallelDeflater.Dispose();
-                        this.ParallelDeflater = null;
+                        ParallelDeflater.Dispose();
+                        ParallelDeflater = null;
                     }
 #endif
                 }
-                this._disposed = true;
+                _disposed = true;
             }
         }
         #endregion
@@ -3575,7 +3578,7 @@ namespace Ionic.Zip
 
                 if (_maxOutputSegmentSize != 0)
                 {
-                    _writestream = ZipSegmentedStream.ForWriting(this._name, _maxOutputSegmentSize);
+                    _writestream = ZipSegmentedStream.ForWriting(_name, _maxOutputSegmentSize);
                     return _writestream;
                 }
 
@@ -3606,7 +3609,7 @@ namespace Ionic.Zip
         private ZipErrorAction _zipErrorAction;
         private bool _disposed;
         //private System.Collections.Generic.List<ZipEntry> _entries;
-        private System.Collections.Generic.Dictionary<String, ZipEntry> _entries;
+        private Dictionary<String, ZipEntry> _entries;
         private List<ZipEntry> _zipEntriesAsList;
         private string _name;
         private string _readName;
@@ -3614,8 +3617,8 @@ namespace Ionic.Zip
         internal string _Password;
         private bool _emitNtfsTimes = true;
         private bool _emitUnixTimes;
-        private Ionic.Zlib.CompressionStrategy _Strategy = Ionic.Zlib.CompressionStrategy.Default;
-        private Ionic.Zip.CompressionMethod _compressionMethod = Ionic.Zip.CompressionMethod.Deflate;
+        private CompressionStrategy _Strategy = CompressionStrategy.Default;
+        private CompressionMethod _compressionMethod = CompressionMethod.Deflate;
         private bool _fileAlreadyExists;
         private string _temporaryFileName;
         private bool _contentsChanged;
@@ -3631,16 +3634,16 @@ namespace Ionic.Zip
         private long _locEndOfCDS = -1;
         private uint _OffsetOfCentralDirectory;
         private Int64 _OffsetOfCentralDirectory64;
-        private Nullable<bool> _OutputUsesZip64;
+        private bool? _OutputUsesZip64;
         internal bool _inExtractAll;
-        private System.Text.Encoding _alternateEncoding = System.Text.Encoding.GetEncoding("IBM437"); // UTF-8
+        private Encoding _alternateEncoding = Encoding.GetEncoding("IBM437"); // UTF-8
         private ZipOption _alternateEncodingUsage = ZipOption.Never;
-        private static System.Text.Encoding _defaultEncoding = System.Text.Encoding.GetEncoding("IBM437");
+        private static Encoding _defaultEncoding = Encoding.GetEncoding("IBM437");
 
         private int _BufferSize = BufferSizeDefault;
 
 #if !NETCF
-        internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
+        internal ParallelDeflateOutputStream ParallelDeflater;
         private long _ParallelDeflateThreshold;
         private int _maxBufferPairs = 16;
 #endif

@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using MinecraftClient.Protocol.Handlers;
-using System.Runtime.InteropServices;
+using System.Linq;
 using Ionic.Zip;
 using MinecraftClient.Mapping;
-using Org.BouncyCastle.Crypto.Utilities;
+using MinecraftClient.Protocol.Handlers;
 using MinecraftClient.Protocol.Handlers.PacketPalettes;
-using System.Runtime.Remoting.Messaging;
-
 namespace MinecraftClient.Protocol
 {
     /// <summary>
@@ -31,7 +26,7 @@ namespace MinecraftClient.Protocol
         private BinaryWriter recordStream;
         private DateTime recordStartTime;
         private DateTime lastPacketTime;
-        private bool cleanedUp = false;
+        private bool cleanedUp;
 
         private static bool logOutput = true;
 
@@ -49,14 +44,14 @@ namespace MinecraftClient.Protocol
         public ReplayHandler(int protocolVersion, string serverName, string recordingDirectory = @"replay_recordings")
         {
             Initialize(protocolVersion);
-            this.MetaData.serverName = serverName;
+            MetaData.serverName = serverName;
             ReplayFileDirectory = recordingDirectory;
         }
 
         private void Initialize(int protocolVersion)
         {
-            this.dataTypes = new DataTypes(protocolVersion);
-            this.packetType = new PacketTypeHandler().GetTypeHandler(protocolVersion);
+            dataTypes = new DataTypes(protocolVersion);
+            packetType = new PacketTypeHandler().GetTypeHandler(protocolVersion);
             this.protocolVersion = protocolVersion;
 
             if (!Directory.Exists(ReplayFileDirectory))
@@ -140,7 +135,7 @@ namespace MinecraftClient.Protocol
             {
                 using (Stream metaDataFile = new FileStream(Path.Combine(temporaryCache, MetaData.MetaDataFileName), FileMode.Open))
                 {
-                    using (ZipOutputStream zs = new ZipOutputStream(Path.Combine(ReplayFileDirectory, replayFileName)))
+                    using (var zs = new ZipOutputStream(Path.Combine(ReplayFileDirectory, replayFileName)))
                     {
                         zs.PutNextEntry(recordingTmpFileName);
                         recordingFile.CopyTo(zs);
@@ -172,7 +167,7 @@ namespace MinecraftClient.Protocol
 
             using (Stream metaDataFile = new FileStream(Path.Combine(temporaryCache, MetaData.MetaDataFileName), FileMode.Open))
             {
-                using (ZipOutputStream zs = new ZipOutputStream(replayFileName))
+                using (var zs = new ZipOutputStream(replayFileName))
                 {
                     zs.PutNextEntry(recordingTmpFileName);
                     // .CopyTo() method start from stream current position
@@ -239,15 +234,15 @@ namespace MinecraftClient.Protocol
             lastPacketTime = DateTime.Now;
             // build raw packet
             // format: packetID + packetData
-            List<byte> rawPacket = new List<byte>();
+            var rawPacket = new List<byte>();
             rawPacket.AddRange(dataTypes.GetVarInt(packetID).ToArray());
             rawPacket.AddRange(packetData.ToArray());
             // build format
             // format: timestamp + packetLength + RawPacket
-            List<byte> line = new List<byte>();
-            int nowTime = Convert.ToInt32((lastPacketTime - recordStartTime).TotalMilliseconds);
-            line.AddRange(BitConverter.GetBytes((Int32)nowTime).Reverse().ToArray());
-            line.AddRange(BitConverter.GetBytes((Int32)rawPacket.Count).Reverse().ToArray());
+            var line = new List<byte>();
+            var nowTime = Convert.ToInt32((lastPacketTime - recordStartTime).TotalMilliseconds);
+            line.AddRange(BitConverter.GetBytes(nowTime).Reverse().ToArray());
+            line.AddRange(BitConverter.GetBytes(rawPacket.Count).Reverse().ToArray());
             line.AddRange(rawPacket.ToArray());
             // Write out to the file
             recordStream.Write(line.ToArray());
@@ -279,14 +274,12 @@ namespace MinecraftClient.Protocol
             {
                 return true;
             }
-            else
-            { // is login
-                if (packetID == 0x02) // login success
-                {
-                    return true;
-                }
-                else return false;
+            // is login
+            if (packetID == 0x02) // login success
+            {
+                return true;
             }
+            return false;
         }
 
         /// <summary>
@@ -300,7 +293,7 @@ namespace MinecraftClient.Protocol
         /// <param name="isLogin"></param>
         private void HandleInBoundPacket(int packetID, IEnumerable<byte> packetData, bool isLogin)
         {
-            Queue<byte> p = new Queue<byte>(packetData);
+            var p = new Queue<byte>(packetData);
             PacketTypesIn pType = packetType.GetIncommingTypeById(packetID);
             // Login success. Get player UUID
             if (isLogin && packetID == 0x02)
@@ -311,14 +304,14 @@ namespace MinecraftClient.Protocol
                     if (Guid.TryParse(dataTypes.ReadNextString(p), out uuid))
                     {
                         SetClientPlayerUUID(uuid);
-                        WriteDebugLog("User UUID: " + uuid.ToString());
+                        WriteDebugLog("User UUID: " + uuid);
                     }
                 }
                 else
                 {
                     var uuid2 = dataTypes.ReadNextUUID(p);
                     SetClientPlayerUUID(uuid2);
-                    WriteDebugLog("User UUID: " + uuid2.ToString());
+                    WriteDebugLog("User UUID: " + uuid2);
                 }
                 return;
             }
@@ -361,7 +354,6 @@ namespace MinecraftClient.Protocol
                     playerLastPosition.Y = y;
                     playerLastPosition.Z = z;
                 }
-                return;
             }
         }
 
@@ -383,14 +375,14 @@ namespace MinecraftClient.Protocol
 
         private byte[] GetSpawnPlayerPacket(int entityID, Guid playerUUID, Location location, double pitch, double yaw)
         {
-            List<byte> packet = new List<byte>();
+            var packet = new List<byte>();
             packet.AddRange(dataTypes.GetVarInt(entityID));
             packet.AddRange(playerUUID.ToBigEndianBytes());
             packet.AddRange(dataTypes.GetDouble(location.X));
             packet.AddRange(dataTypes.GetDouble(location.Y));
             packet.AddRange(dataTypes.GetDouble(location.Z));
-            packet.Add((byte)0);
-            packet.Add((byte)0);
+            packet.Add(0);
+            packet.Add(0);
             return packet.ToArray();
         }
 
@@ -421,9 +413,9 @@ namespace MinecraftClient.Protocol
         public readonly string MetaDataFileName = @"metaData.json";
         public readonly string temporaryCache = @"recording_cache";
 
-        public bool singlePlayer = false;
+        public bool singlePlayer;
         public string serverName;
-        public int duration = 0; // duration of the whole replay
+        public int duration; // duration of the whole replay
         public long date; // start time of the recording in unix timestamp milliseconds
         public string mcversion = "0.0"; // e.g. 1.15.2
         public string fileFormat = "MCPR";
@@ -453,20 +445,7 @@ namespace MinecraftClient.Protocol
         /// <returns>JSON string</returns>
         public string ToJson()
         {
-            return String.Concat(new[] { "{"
-                , "\"singleplayer\":" , singlePlayer.ToString().ToLower() , ","
-                , "\"serverName\":\"" , serverName , "\","
-                , "\"duration\":" , duration.ToString() , ","
-                , "\"date\":" , date.ToString() , ","
-                , "\"mcversion\":\"" , mcversion , "\","
-                , "\"fileFormat\":\"" , fileFormat , "\","
-                , "\"fileFormatVersion\":" , fileFormatVersion.ToString() , ","
-                , "\"protocol\":" , protocol.ToString() , ","
-                , "\"generator\":\"" , generator , "\","
-                , "\"selfId\":" , selfId.ToString() + ","
-                , "\"player\":" , GetPlayersJsonArray()
-                , "}"
-            });
+            return String.Concat("{", "\"singleplayer\":", singlePlayer.ToString().ToLower(), ",", "\"serverName\":\"", serverName, "\",", "\"duration\":", duration.ToString(), ",", "\"date\":", date.ToString(), ",", "\"mcversion\":\"", mcversion, "\",", "\"fileFormat\":\"", fileFormat, "\",", "\"fileFormatVersion\":", fileFormatVersion.ToString(), ",", "\"protocol\":", protocol.ToString(), ",", "\"generator\":\"", generator, "\",", "\"selfId\":", selfId + ",", "\"player\":", GetPlayersJsonArray(), "}");
         }
 
         /// <summary>

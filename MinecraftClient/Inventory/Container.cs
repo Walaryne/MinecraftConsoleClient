@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Inventory
 {
     /// <summary>
@@ -161,7 +157,7 @@ namespace MinecraftClient.Inventory
         /// <returns>An array of slot ID</returns>
         public int[] SearchItem(ItemType itemType)
         {
-            List<int> result = new List<int>();
+            var result = new List<int>();
             if (Items != null)
             {
                 foreach (var item in Items)
@@ -180,8 +176,8 @@ namespace MinecraftClient.Inventory
         /// <remarks>Also depending on the container type, some empty slots cannot be used e.g. armor slots. This might cause issues.</remarks>
         public int[] GetEmpytSlots()
         {
-            List<int> result = new List<int>();
-            for (int i = 0; i < Type.SlotCount(); i++)
+            var result = new List<int>();
+            for (var i = 0; i < Type.SlotCount(); i++)
             {
                 result.Add(i);
             }

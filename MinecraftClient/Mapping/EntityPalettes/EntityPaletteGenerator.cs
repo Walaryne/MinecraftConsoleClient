@@ -1,5 +1,4 @@
 ﻿using MinecraftClient.Protocol;
-
 namespace MinecraftClient.Mapping.EntityPalettes
 {
     /// <summary>

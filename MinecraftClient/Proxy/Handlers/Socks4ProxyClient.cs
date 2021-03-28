@@ -24,14 +24,12 @@
  */
 
 using System;
-using System.Text;
+using System.ComponentModel;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
-using System.Globalization;
-using System.IO;
+using System.Text;
 using System.Threading;
-using System.ComponentModel;
-
 namespace Starksoft.Net.Proxy
 {
     /// <summary>
@@ -312,7 +310,7 @@ namespace Starksoft.Net.Proxy
             byte[] destIp = GetIPAddressBytes(destinationHost);
             byte[] destPort = GetDestinationPortBytes(destinationPort);
             byte[] userIdBytes = ASCIIEncoding.ASCII.GetBytes(userId);   
-            byte[] request = new byte[9 + userIdBytes.Length];
+            var request = new byte[9 + userIdBytes.Length];
 
             //  set the bits on the request byte array
             request[0] = SOCKS4_VERSION_NUMBER;
@@ -361,7 +359,7 @@ namespace Starksoft.Net.Proxy
             // connected to the application server.
 
             // create an 8 byte response array  
-            byte[] response = new byte[8];
+            var response = new byte[8];
             
             // read the resonse from the network stream
             proxy.Read(response, 0, 8);
@@ -404,7 +402,7 @@ namespace Starksoft.Net.Proxy
         /// <returns>Byte array representing an 16 bit port number as two bytes.</returns>
         internal byte[] GetDestinationPortBytes(int value)
         {
-            byte[] array = new byte[2];
+            var array = new byte[2];
             array[0] = Convert.ToByte(value / 256);
             array[1] = Convert.ToByte(value % 256);
             return array;
@@ -426,18 +424,18 @@ namespace Starksoft.Net.Proxy
             byte replyCode = response[1];
            
             //  extract the ip v4 address (4 bytes)
-            byte[] ipBytes = new byte[4];
-            for (int i = 0; i < 4; i++)
+            var ipBytes = new byte[4];
+            for (var i = 0; i < 4; i++)
                 ipBytes[i] = response[i + 4];
             
             //  convert the ip address to an IPAddress object
-            IPAddress ipAddr = new IPAddress(ipBytes);
+            var ipAddr = new IPAddress(ipBytes);
 
             //  extract the port number big endian (2 bytes)
-            byte[] portBytes = new byte[2];
+            var portBytes = new byte[2];
             portBytes[0] = response[3];
             portBytes[1] = response[2];
-            Int16 port = BitConverter.ToInt16(portBytes, 0);
+            var port = BitConverter.ToInt16(portBytes, 0);
 
             // translate the reply code error number to human readable text
             string proxyErrorText;
@@ -466,7 +464,7 @@ namespace Starksoft.Net.Proxy
 
         internal void WaitForData(NetworkStream stream)
         {
-            int sleepTime = 0;
+            var sleepTime = 0;
             while (!stream.DataAvailable)
             {
                 Thread.Sleep(WAIT_FOR_DATA_INTERVAL);
@@ -551,9 +549,9 @@ namespace Starksoft.Net.Proxy
 
             CreateAsyncWorker();
             _asyncWorker.WorkerSupportsCancellation = true;
-            _asyncWorker.DoWork += new DoWorkEventHandler(CreateConnectionAsync_DoWork);
-            _asyncWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(CreateConnectionAsync_RunWorkerCompleted);
-            Object[] args = new Object[2];
+            _asyncWorker.DoWork += CreateConnectionAsync_DoWork;
+            _asyncWorker.RunWorkerCompleted += CreateConnectionAsync_RunWorkerCompleted;
+            var args = new Object[2];
             args[0] = destinationHost;
             args[1] = destinationPort;
             _asyncWorker.RunWorkerAsync(args);
@@ -563,7 +561,7 @@ namespace Starksoft.Net.Proxy
         {
             try
             {
-                Object[] args = (Object[])e.Argument;
+                var args = (Object[])e.Argument;
                 e.Result = CreateConnection((string)args[0], (int)args[1]);
             }
             catch (Exception ex)

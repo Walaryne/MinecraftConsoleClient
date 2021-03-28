@@ -1,13 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.Protocol.Handlers.PacketPalettes
 {
     public class PacketPalette17 : PacketTypePalette
     {
-        private Dictionary<int, PacketTypesIn> typeIn = new Dictionary<int, PacketTypesIn>()
+        private Dictionary<int, PacketTypesIn> typeIn = new Dictionary<int, PacketTypesIn>
         {
             { 0x00, PacketTypesIn.KeepAlive },
             { 0x01, PacketTypesIn.JoinGame },
@@ -85,7 +81,7 @@ namespace MinecraftClient.Protocol.Handlers.PacketPalettes
             { 0x49, PacketTypesIn.UpdateEntityNBT },
         };
 
-        private Dictionary<int, PacketTypesOut> typeOut = new Dictionary<int, PacketTypesOut>()
+        private Dictionary<int, PacketTypesOut> typeOut = new Dictionary<int, PacketTypesOut>
         {
             { 0x00, PacketTypesOut.KeepAlive },
             { 0x01, PacketTypesOut.ChatMessage },

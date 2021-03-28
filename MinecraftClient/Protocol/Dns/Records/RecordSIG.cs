@@ -1,5 +1,4 @@
 using System;
-
 #region Rfc info
 /*
  * http://www.ietf.org/rfc/rfc2535.txt

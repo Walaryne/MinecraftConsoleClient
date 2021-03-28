@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Security.Cryptography;
 using System.IO;
-
+using System.Security.Cryptography;
 namespace MinecraftClient.Crypto.Streams
 {
     /// <summary>
@@ -22,7 +18,7 @@ namespace MinecraftClient.Crypto.Streams
             enc = new CryptoStream(stream, GenerateAES(key).CreateEncryptor(), CryptoStreamMode.Write);
             dec = new CryptoStream(stream, GenerateAES(key).CreateDecryptor(), CryptoStreamMode.Read);
         }
-        public System.IO.Stream BaseStream { get; set; }
+        public Stream BaseStream { get; set; }
 
         public override bool CanRead
         {
@@ -71,7 +67,7 @@ namespace MinecraftClient.Crypto.Streams
             return dec.Read(buffer, offset, count);
         }
 
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotSupportedException();
         }
@@ -93,7 +89,7 @@ namespace MinecraftClient.Crypto.Streams
 
         private RijndaelManaged GenerateAES(byte[] key)
         {
-            RijndaelManaged cipher = new RijndaelManaged();
+            var cipher = new RijndaelManaged();
             cipher.Mode = CipherMode.CFB;
             cipher.Padding = PaddingMode.None;
             cipher.KeySize = 128;

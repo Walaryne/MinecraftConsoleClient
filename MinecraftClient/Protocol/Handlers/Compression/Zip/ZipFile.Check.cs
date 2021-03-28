@@ -29,8 +29,7 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
-
+using System.Text;
 namespace Ionic.Zip
 {
     public partial class ZipFile
@@ -56,7 +55,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         ///   Developers using COM can use the <see
-        ///   cref="ComHelper.CheckZip(String)">ComHelper.CheckZip(String)</see>
+        ///   cref="ComHelper.CheckZip(string)">ComHelper.CheckZip(String)</see>
         ///   method.
         /// </para>
         ///
@@ -119,14 +118,14 @@ namespace Ionic.Zip
 
         {
             ZipFile zip1 = null, zip2 = null;
-            bool isOk = true;
+            var isOk = true;
             try
             {
                 zip1 = new ZipFile();
                 zip1.FullScan = true;
                 zip1.Initialize(zipFileName);
 
-                zip2 = ZipFile.Read(zipFileName);
+                zip2 = Read(zipFileName);
 
                 foreach (var e1 in zip1)
                 {
@@ -187,7 +186,7 @@ namespace Ionic.Zip
                 if (!isOk && fixIfNecessary)
                 {
                     string newFileName = Path.GetFileNameWithoutExtension(zipFileName);
-                    newFileName = System.String.Format("{0}_fixed.zip", newFileName);
+                    newFileName = String.Format("{0}_fixed.zip", newFileName);
                     zip1.Save(newFileName);
                 }
             }
@@ -225,7 +224,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         ///   Developers using COM can use the <see
-        ///   cref="ComHelper.FixZipDirectory(String)">ComHelper.FixZipDirectory(String)</see>
+        ///   cref="ComHelper.FixZipDirectory(string)">ComHelper.FixZipDirectory(String)</see>
         ///   method.
         /// </para>
         ///
@@ -275,22 +274,22 @@ namespace Ionic.Zip
         public static bool CheckZipPassword(string zipFileName, string password)
         {
             // workitem 13664
-            bool success = false;
+            var success = false;
             try
             {
-                using (ZipFile zip1 = ZipFile.Read(zipFileName))
+                using (ZipFile zip1 = Read(zipFileName))
                 {
                     foreach (var e in zip1)
                     {
                         if (!e.IsDirectory && e.UsesEncryption)
                         {
-                            e.ExtractWithPassword(System.IO.Stream.Null, password);
+                            e.ExtractWithPassword(Stream.Null, password);
                         }
                     }
                 }
                 success = true;
             }
-            catch(Ionic.Zip.BadPasswordException) { }
+            catch(BadPasswordException) { }
             return success;
         }
 
@@ -315,30 +314,30 @@ namespace Ionic.Zip
         {
             get
             {
-                var builder = new System.Text.StringBuilder();
-                builder.Append(string.Format("          ZipFile: {0}\n", this.Name));
-                if (!string.IsNullOrEmpty(this._Comment))
+                var builder = new StringBuilder();
+                builder.Append(string.Format("          ZipFile: {0}\n", Name));
+                if (!string.IsNullOrEmpty(_Comment))
                 {
-                    builder.Append(string.Format("          Comment: {0}\n", this._Comment));
+                    builder.Append(string.Format("          Comment: {0}\n", _Comment));
                 }
-                if (this._versionMadeBy != 0)
+                if (_versionMadeBy != 0)
                 {
-                    builder.Append(string.Format("  version made by: 0x{0:X4}\n", this._versionMadeBy));
+                    builder.Append(string.Format("  version made by: 0x{0:X4}\n", _versionMadeBy));
                 }
-                if (this._versionNeededToExtract != 0)
+                if (_versionNeededToExtract != 0)
                 {
-                    builder.Append(string.Format("needed to extract: 0x{0:X4}\n", this._versionNeededToExtract));
+                    builder.Append(string.Format("needed to extract: 0x{0:X4}\n", _versionNeededToExtract));
                 }
 
-                builder.Append(string.Format("       uses ZIP64: {0}\n", this.InputUsesZip64));
+                builder.Append(string.Format("       uses ZIP64: {0}\n", InputUsesZip64));
 
-                builder.Append(string.Format("     disk with CD: {0}\n", this._diskNumberWithCd));
-                if (this._OffsetOfCentralDirectory == 0xFFFFFFFF)
-                    builder.Append(string.Format("      CD64 offset: 0x{0:X16}\n", this._OffsetOfCentralDirectory64));
+                builder.Append(string.Format("     disk with CD: {0}\n", _diskNumberWithCd));
+                if (_OffsetOfCentralDirectory == 0xFFFFFFFF)
+                    builder.Append(string.Format("      CD64 offset: 0x{0:X16}\n", _OffsetOfCentralDirectory64));
                 else
-                    builder.Append(string.Format("        CD offset: 0x{0:X8}\n", this._OffsetOfCentralDirectory));
+                    builder.Append(string.Format("        CD offset: 0x{0:X8}\n", _OffsetOfCentralDirectory));
                 builder.Append("\n");
-                foreach (ZipEntry entry in this._entries.Values)
+                foreach (ZipEntry entry in _entries.Values)
                 {
                     builder.Append(entry.Info);
                 }

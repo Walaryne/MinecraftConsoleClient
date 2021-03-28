@@ -23,12 +23,8 @@
  * 
  */
 
-using System;
-using System.Text;
-using System.Net;
 using System.Net.Sockets;
-using System.IO;
-
+using System.Text;
 namespace Starksoft.Net.Proxy
 {
     /// <summary>
@@ -47,7 +43,6 @@ namespace Starksoft.Net.Proxy
         /// Default constructor.
         /// </summary>
         public Socks4aProxyClient()
-            : base()
         { }
 
         /// <summary>
@@ -163,7 +158,7 @@ namespace Starksoft.Net.Proxy
             byte[] destPort = GetDestinationPortBytes(destinationPort);
             byte[] userIdBytes = ASCIIEncoding.ASCII.GetBytes(userId);
             byte[] hostBytes = ASCIIEncoding.ASCII.GetBytes(destinationHost);
-            byte[] request = new byte[10 + userIdBytes.Length + hostBytes.Length];
+            var request = new byte[10 + userIdBytes.Length + hostBytes.Length];
 
             //  set the bits on the request byte array
             request[0] = SOCKS4_VERSION_NUMBER;
@@ -179,7 +174,7 @@ namespace Starksoft.Net.Proxy
             proxy.Write(request, 0, request.Length);
 
             // wait for the proxy server to send a response
-            base.WaitForData(proxy);
+            WaitForData(proxy);
 
             // PROXY SERVER RESPONSE
             // The SOCKS server checks to see whether such a request should be granted
@@ -214,7 +209,7 @@ namespace Starksoft.Net.Proxy
             // connected to the application server.
 
             // create an 8 byte response array  
-            byte[] response = new byte[8];
+            var response = new byte[8];
 
             // read the resonse from the network stream
             proxy.Read(response, 0, 8);

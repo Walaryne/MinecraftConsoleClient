@@ -1,4 +1,4 @@
-using System;
+
 /*
  3.3.7. MINFO RDATA format (EXPERIMENTAL)
 

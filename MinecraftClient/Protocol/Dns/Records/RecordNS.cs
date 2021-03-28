@@ -1,4 +1,4 @@
-using System;
+
 /*
  3.3.11. NS RDATA format
 

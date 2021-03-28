@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     public class Animation : Command
@@ -23,22 +19,16 @@ namespace MinecraftClient.Commands
                         handler.DoAnimation(0);
                         return Translations.Get("general.done");
                     }
-                    else if (args[0] == "offhand" || args[0] == "1")
+                    if (args[0] == "offhand" || args[0] == "1")
                     {
                         handler.DoAnimation(1);
                         return Translations.Get("general.done");
                     }
-                    else
-                    {
-                        return GetCmdDescTranslated();
-                    }
-                }
-                else
-                {
                     return GetCmdDescTranslated();
                 }
+                return GetCmdDescTranslated();
             }
-            else return GetCmdDescTranslated();
+            return GetCmdDescTranslated();
         }
     }
 }

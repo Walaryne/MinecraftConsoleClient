@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
-using System.Threading;
 using System.Text.RegularExpressions;
+using MinecraftClient.ChatBots;
 using MinecraftClient.Inventory;
 using MinecraftClient.Mapping;
-
+using MinecraftClient.Protocol;
 namespace MinecraftClient
 {
     ///
@@ -29,16 +29,16 @@ namespace MinecraftClient
     /// </summary>
     public abstract class ChatBot
     {
-        public enum DisconnectReason { InGameKick, LoginRejected, ConnectionLost, UserLogout };
+        public enum DisconnectReason { InGameKick, LoginRejected, ConnectionLost, UserLogout }
 
         //Handler will be automatically set on bot loading, don't worry about this
-        public void SetHandler(McClient handler) { this._handler = handler; }
+        public void SetHandler(McClient handler) { _handler = handler; }
         protected void SetMaster(ChatBot master) { this.master = master; }
         protected void LoadBot(ChatBot bot) { Handler.BotUnLoad(bot); Handler.BotLoad(bot); }
         protected List<ChatBot> GetLoadedChatBots() { return Handler.GetLoadedChatBots(); }
         protected void UnLoadBot(ChatBot bot) { Handler.BotUnLoad(bot); }
-        private McClient _handler = null;
-        private ChatBot master = null;
+        private McClient _handler;
+        private ChatBot master;
         private List<string> registeredPluginChannels = new List<String>();
         private McClient Handler
         {
@@ -136,7 +136,7 @@ namespace MinecraftClient
         /// Called when an entity moved nearby
         /// </summary>
         /// <param name="entity">Entity with updated location</param>
-        public virtual void OnEntityMove(Mapping.Entity entity) { }
+        public virtual void OnEntityMove(Entity entity) { }
 
         /// <summary>
         /// Called after an internal MCC command has been performed
@@ -150,13 +150,13 @@ namespace MinecraftClient
         /// Called when an entity spawned nearby
         /// </summary>
         /// <param name="entity">New Entity</param>
-        public virtual void OnEntitySpawn(Mapping.Entity entity) { }
+        public virtual void OnEntitySpawn(Entity entity) { }
 
         /// <summary>
         /// Called when an entity despawns/dies nearby
         /// </summary>
         /// <param name="entity">Entity wich has just disappeared</param>
-        public virtual void OnEntityDespawn(Mapping.Entity entity) { }
+        public virtual void OnEntityDespawn(Entity entity) { }
 
         /// <summary>
         /// Called when the player held item has changed
@@ -373,7 +373,7 @@ namespace MinecraftClient
         /// <returns>TRUE if the command was indeed an internal MCC command</returns>
         protected bool PerformInternalCommand(string command, Dictionary<string, object> localVars = null)
         {
-            string temp = "";
+            var temp = "";
             return Handler.PerformInternalCommand(command, ref temp, localVars);
         }
 
@@ -397,10 +397,10 @@ namespace MinecraftClient
             if ( String.IsNullOrEmpty(text) )
                 return String.Empty;
 
-            int idx = 0;
+            var idx = 0;
             var data = new char[text.Length];
 
-            for ( int i = 0; i < text.Length; i++ )
+            for ( var i = 0; i < text.Length; i++ )
                 if ( text[i] != '§' )
                     data[idx++] = text[i];
                 else
@@ -476,8 +476,8 @@ namespace MinecraftClient
                     //Detect Essentials (Bukkit) /m messages
                     //[Someone -> me] message
                     //[~Someone -> me] message
-                    else if (text[0] == '[' && tmp.Length > 3 && tmp[1] == "->"
-                            && (tmp[2].ToLower() == "me]" || tmp[2].ToLower() == "moi]")) //'me' is replaced by 'moi' in french servers
+                    if (text[0] == '[' && tmp.Length > 3 && tmp[1] == "->"
+                        && (tmp[2].ToLower() == "me]" || tmp[2].ToLower() == "moi]")) //'me' is replaced by 'moi' in french servers
                     {
                         message = text.Substring(tmp[0].Length + 4 + tmp[2].Length + 1);
                         sender = tmp[0].Substring(1);
@@ -487,8 +487,8 @@ namespace MinecraftClient
 
                     //Detect Modified server messages. /m
                     //[Someone @ me] message
-                    else if (text[0] == '[' && tmp.Length > 3 && tmp[1] == "@"
-                            && (tmp[2].ToLower() == "me]" || tmp[2].ToLower() == "moi]")) //'me' is replaced by 'moi' in french servers
+                    if (text[0] == '[' && tmp.Length > 3 && tmp[1] == "@"
+                        && (tmp[2].ToLower() == "me]" || tmp[2].ToLower() == "moi]")) //'me' is replaced by 'moi' in french servers
                     {
                         message = text.Substring(tmp[0].Length + 4 + tmp[2].Length + 0);
                         sender = tmp[0].Substring(1);
@@ -499,9 +499,9 @@ namespace MinecraftClient
                     //Detect Essentials (Bukkit) /me messages with some custom prefix
                     //[Prefix] [Someone -> me] message
                     //[Prefix] [~Someone -> me] message
-                    else if (text[0] == '[' && tmp[0][tmp[0].Length - 1] == ']'
-                            && tmp[1][0] == '[' && tmp.Length > 4 && tmp[2] == "->"
-                            && (tmp[3].ToLower() == "me]" || tmp[3].ToLower() == "moi]"))
+                    if (text[0] == '[' && tmp[0][tmp[0].Length - 1] == ']'
+                        && tmp[1][0] == '[' && tmp.Length > 4 && tmp[2] == "->"
+                        && (tmp[3].ToLower() == "me]" || tmp[3].ToLower() == "moi]"))
                     {
                         message = text.Substring(tmp[0].Length + 1 + tmp[1].Length + 4 + tmp[3].Length + 1);
                         sender = tmp[1].Substring(1);
@@ -512,8 +512,8 @@ namespace MinecraftClient
                     //Detect Essentials (Bukkit) /me messages with some custom rank
                     //[Someone [rank] -> me] message
                     //[~Someone [rank] -> me] message
-                    else if (text[0] == '[' && tmp.Length > 3 && tmp[2] == "->"
-                            && (tmp[3].ToLower() == "me]" || tmp[3].ToLower() == "moi]"))
+                    if (text[0] == '[' && tmp.Length > 3 && tmp[2] == "->"
+                        && (tmp[3].ToLower() == "me]" || tmp[3].ToLower() == "moi]"))
                     {
                         message = text.Substring(tmp[0].Length + 1 + tmp[1].Length + 4 + tmp[2].Length + 1);
                         sender = tmp[0].Substring(1);
@@ -523,13 +523,13 @@ namespace MinecraftClient
 
                     //Detect HeroChat PMsend
                     //From Someone: message
-                    else if (text.StartsWith("From "))
+                    if (text.StartsWith("From "))
                     {
                         sender = text.Substring(5).Split(':')[0];
                         message = text.Substring(text.IndexOf(':') + 2);
                         return IsValidName(sender);
                     }
-                    else return false;
+                    return false;
                 }
                 catch (IndexOutOfRangeException) { /* Not an expected chat format */ }
                 catch (ArgumentOutOfRangeException) { /* Same here */ }
@@ -627,7 +627,7 @@ namespace MinecraftClient
                         string prefix = tmp[0];
                         string user = tmp[1];
                         string semicolon = tmp[2];
-                        if (prefix.All(c => char.IsLetterOrDigit(c) || new char[] { '*', '<', '>', '_' }.Contains(c))
+                        if (prefix.All(c => char.IsLetterOrDigit(c) || new[] { '*', '<', '>', '_' }.Contains(c))
                             && semicolon == ":")
                         {
                             message = text.Substring(prefix.Length + user.Length + 4);
@@ -705,9 +705,9 @@ namespace MinecraftClient
         protected void LogToConsole(object text)
         {
             if (_handler == null || master == null)
-                ConsoleIO.WriteLogLine(String.Format("[{0}] {1}", this.GetType().Name, text));
+                ConsoleIO.WriteLogLine(String.Format("[{0}] {1}", GetType().Name, text));
             else
-                Handler.Log.Info(String.Format("[{0}] {1}", this.GetType().Name, text));
+                Handler.Log.Info(String.Format("[{0}] {1}", GetType().Name, text));
             string logfile = Settings.ExpandVars(Settings.chatbotLogFile);
 
             if (!String.IsNullOrEmpty(logfile))
@@ -720,7 +720,7 @@ namespace MinecraftClient
                     catch { return; /* Invalid file name or access denied */ }
                 }
 
-                File.AppendAllLines(logfile, new string[] { GetTimestamp() + ' ' + text });
+                File.AppendAllLines(logfile, new[] { GetTimestamp() + ' ' + text });
             }
         }
 
@@ -763,7 +763,7 @@ namespace MinecraftClient
         protected void ReconnectToTheServer(int ExtraAttempts = 3, int delaySeconds = 0)
         {
             if (Settings.DebugMessages)
-                ConsoleIO.WriteLogLine(Translations.Get("chatbot.reconnect", this.GetType().Name));
+                ConsoleIO.WriteLogLine(Translations.Get("chatbot.reconnect", GetType().Name));
             McClient.ReconnectionAttemptsLeft = ExtraAttempts;
             Program.Restart(delaySeconds);
         }
@@ -802,7 +802,7 @@ namespace MinecraftClient
         /// <param name="localVars">Local variables for use in the Script</param>
         protected void RunScript(string filename, string playername = null, Dictionary<string, object> localVars = null)
         {
-            Handler.BotLoad(new ChatBots.Script(filename, playername, localVars));
+            Handler.BotLoad(new Script(filename, playername, localVars));
         }
 
         /// <summary>
@@ -849,13 +849,13 @@ namespace MinecraftClient
         /// </summary>
         protected bool Sneak(bool on)
         {
-            return SendEntityAction(on ? Protocol.EntityActionType.StartSneaking : Protocol.EntityActionType.StopSneaking);
+            return SendEntityAction(on ? EntityActionType.StartSneaking : EntityActionType.StopSneaking);
         }
 
         /// <summary>
         /// Send Entity Action
         /// </summary>
-        private bool SendEntityAction(Protocol.EntityActionType entityAction)
+        private bool SendEntityAction(EntityActionType entityAction)
         {
             return Handler.SendEntityAction(entityAction);
         }
@@ -883,7 +883,7 @@ namespace MinecraftClient
         /// Get the current Minecraft World
         /// </summary>
         /// <returns>Minecraft world or null if associated setting is disabled</returns>
-        protected Mapping.World GetWorld()
+        protected World GetWorld()
         {
             if (GetTerrainEnabled())
                 return Handler.GetWorld();
@@ -912,7 +912,7 @@ namespace MinecraftClient
         /// Get the current location of the player (Feet location)
         /// </summary>
         /// <returns>Minecraft world or null if associated setting is disabled</returns>
-        protected Mapping.Location GetCurrentLocation()
+        protected Location GetCurrentLocation()
         {
             return Handler.GetCurrentLocation();
         }
@@ -924,7 +924,7 @@ namespace MinecraftClient
         /// <param name="allowUnsafe">Allow possible but unsafe locations thay may hurt the player: lava, cactus...</param>
         /// <param name="allowDirectTeleport">Allow non-vanilla teleport instead of computing path, but may cause invalid moves and/or trigger anti-cheat plugins</param>
         /// <returns>True if a path has been found</returns>
-        protected bool MoveToLocation(Mapping.Location location, bool allowUnsafe = false, bool allowDirectTeleport = false)
+        protected bool MoveToLocation(Location location, bool allowUnsafe = false, bool allowDirectTeleport = false)
         {
             return Handler.MoveTo(location, allowUnsafe, allowDirectTeleport);
         }
@@ -933,7 +933,7 @@ namespace MinecraftClient
         /// Look at the specified location
         /// </summary>
         /// <param name="location">Location to look at</param>
-        protected void LookAtLocation(Mapping.Location location)
+        protected void LookAtLocation(Location location)
         {
             Handler.UpdateLocation(Handler.GetCurrentLocation(), location);
         }
@@ -969,11 +969,8 @@ namespace MinecraftClient
                         .Select(line => line.ToLower())
                         .Distinct().ToArray();
             }
-            else
-            {
-                LogToConsole("File not found: " + System.IO.Path.GetFullPath(file));
-                return new string[0];
-            }
+            LogToConsole("File not found: " + Path.GetFullPath(file));
+            return new string[0];
         }
 
         /// <summary>
@@ -1048,7 +1045,7 @@ namespace MinecraftClient
         /// <param name="channel">The name of the channel to register</param>
         protected void RegisterPluginChannel(string channel)
         {
-            this.registeredPluginChannels.Add(channel);
+            registeredPluginChannels.Add(channel);
             Handler.RegisterPluginChannel(channel, this);
         }
 
@@ -1058,7 +1055,7 @@ namespace MinecraftClient
         /// <param name="channel">The name of the channel to unregister</param>
         protected void UnregisterPluginChannel(string channel)
         {
-            this.registeredPluginChannels.RemoveAll(chan => chan == channel);
+            registeredPluginChannels.RemoveAll(chan => chan == channel);
             Handler.UnregisterPluginChannel(channel, this);
         }
 
@@ -1074,7 +1071,7 @@ namespace MinecraftClient
         {
             if (!sendEvenIfNotRegistered)
             {
-                if (!this.registeredPluginChannels.Contains(channel))
+                if (!registeredPluginChannels.Contains(channel))
                 {
                     return false;
                 }
@@ -1269,7 +1266,7 @@ namespace MinecraftClient
         /// <returns>True if successfully registered</returns>
         protected bool RegisterChatBotCommand(string cmdName, string cmdDesc, string cmdUsage, CommandRunner callback)
         {
-            return Handler.RegisterCommand(cmdName, cmdDesc, cmdUsage, callback);
+            return McClient.RegisterCommand(cmdName, cmdDesc, cmdUsage, callback);
         }
 
         /// <summary>
@@ -1298,7 +1295,7 @@ namespace MinecraftClient
         {
             if (Handler.GetHealth() <= 0)
                 return Handler.SendRespawnPacket();
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -1348,7 +1345,7 @@ namespace MinecraftClient
 
             public override string Run(McClient handler, string command, Dictionary<string, object> localVars)
             {
-                return this.Runner(command, getArgs(command));
+                return Runner(command, getArgs(command));
             }
 
             /// <summary>
@@ -1360,10 +1357,10 @@ namespace MinecraftClient
             /// <param name="callback">Method for handling the command</param>
             public ChatBotCommand(string cmdName, string cmdDesc, string cmdUsage, CommandRunner callback)
             {
-                this._cmdName = cmdName;
-                this._cmdDesc = cmdDesc;
-                this._cmdUsage = cmdUsage;
-                this.Runner = callback;
+                _cmdName = cmdName;
+                _cmdDesc = cmdDesc;
+                _cmdUsage = cmdUsage;
+                Runner = callback;
             }
         }
     }

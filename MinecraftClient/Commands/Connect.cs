@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     public class Connect : Command
@@ -29,9 +25,9 @@ namespace MinecraftClient.Commands
                     Program.Restart();
                     return "";
                 }
-                else return Translations.Get("cmd.connect.invalid_ip", args[0]);
+                return Translations.Get("cmd.connect.invalid_ip", args[0]);
             }
-            else return GetCmdDescTranslated();
+            return GetCmdDescTranslated();
         }
     }
 }

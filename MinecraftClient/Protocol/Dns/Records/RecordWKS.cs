@@ -1,4 +1,4 @@
-using System;
+
 /*
  * 3.4.2. WKS RDATA format
 
@@ -60,7 +60,7 @@ namespace Heijden.DNS
 				rr.ReadByte(),
 				rr.ReadByte(),
 				rr.ReadByte());
-			PROTOCOL = (int)rr.ReadByte();
+			PROTOCOL = rr.ReadByte();
 			length -= 5;
 			BITMAP = new byte[length];
 			BITMAP = rr.ReadBytes(length);

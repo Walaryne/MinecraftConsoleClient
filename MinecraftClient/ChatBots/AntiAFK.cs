@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace MinecraftClient.ChatBots
+﻿namespace MinecraftClient.ChatBots
 {
     /// <summary>
     /// This bot sends a command every 60 seconds in order to stay non-afk.

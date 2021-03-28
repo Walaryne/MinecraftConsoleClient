@@ -109,7 +109,7 @@ namespace Heijden.DNS
 
 		private string SizeToString(byte s)
 		{
-			string strUnit = "cm";
+			var strUnit = "cm";
 			int intBase = s >> 4;
 			int intPow = s & 0x0f;
 			if (intPow >= 2)
@@ -124,7 +124,7 @@ namespace Heijden.DNS
 				strUnit = "km";
 			}
 			*/
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.AppendFormat("{0}", intBase);
 			for (; intPow > 0; intPow--)
 				sb.Append('0');
@@ -134,8 +134,8 @@ namespace Heijden.DNS
 
 		private string LonToTime(UInt32 r)
 		{
-			UInt32 Mid = 2147483648; // 2^31
-			char Dir = 'E';
+			var Mid = 2147483648; // 2^31
+			var Dir = 'E';
 			if (r > Mid)
 			{
 				Dir = 'W';
@@ -149,8 +149,8 @@ namespace Heijden.DNS
 
 		private string ToTime(UInt32 r, char Below,char Above)
 		{
-			UInt32 Mid = 2147483648; // 2^31
-			char Dir = '?';
+			var Mid = 2147483648; // 2^31
+			var Dir = '?';
 			if (r > Mid)
 			{
 				Dir = Above;

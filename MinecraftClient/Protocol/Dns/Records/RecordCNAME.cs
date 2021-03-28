@@ -1,4 +1,4 @@
-using System;
+
 /*
  * 
 3.3.1. CNAME RDATA format

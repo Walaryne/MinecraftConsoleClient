@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 /*
  * http://tools.ietf.org/rfc/rfc2065.txt
@@ -54,26 +53,25 @@ namespace Heijden.DNS
 
 		private bool IsSet(int bitNr)
 		{
-			int intByte = (int)(bitNr / 8);
+			int intByte = bitNr / 8;
 			int intOffset = (bitNr % 8);
 			byte b = BITMAP[intByte];
 			int intTest = 1 << intOffset;
 			if ((b & intTest) == 0)
 				return false;
-			else
-				return true;
+			return true;
 		}
 
 
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
-			for (int bitNr = 1; bitNr < (BITMAP.Length * 8); bitNr++)
+			var sb = new StringBuilder();
+			for (var bitNr = 1; bitNr < (BITMAP.Length * 8); bitNr++)
 			{
 				if (IsSet(bitNr))
 					sb.Append(" " + (Type)bitNr);
 			}
-			return string.Format("{0}{1}", NEXTDOMAINNAME, sb.ToString());
+			return string.Format("{0}{1}", NEXTDOMAINNAME, sb);
 		}
 
 	}

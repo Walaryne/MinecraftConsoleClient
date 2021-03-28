@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-
 namespace MinecraftClient.Mapping.EntityPalettes
 {
     public class EntityPalette1162 : EntityPalette

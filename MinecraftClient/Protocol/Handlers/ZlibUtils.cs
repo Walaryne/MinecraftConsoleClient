@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 using Ionic.Zlib;
-
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -22,9 +18,9 @@ namespace MinecraftClient.Protocol.Handlers
         public static byte[] Compress(byte[] to_compress)
         {
             byte[] data;
-            using (System.IO.MemoryStream memstream = new System.IO.MemoryStream())
+            using (var memstream = new MemoryStream())
             {
-                using (ZlibStream stream = new ZlibStream(memstream, CompressionMode.Compress))
+                using (var stream = new ZlibStream(memstream, CompressionMode.Compress))
                 {
                     stream.Write(to_compress, 0, to_compress.Length);
                 }
@@ -41,8 +37,8 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Decompressed data as a byte array</returns>
         public static byte[] Decompress(byte[] to_decompress, int size_uncompressed)
         {
-            ZlibStream stream = new ZlibStream(new System.IO.MemoryStream(to_decompress, false), CompressionMode.Decompress);
-            byte[] packetData_decompressed = new byte[size_uncompressed];
+            var stream = new ZlibStream(new MemoryStream(to_decompress, false), CompressionMode.Decompress);
+            var packetData_decompressed = new byte[size_uncompressed];
             stream.Read(packetData_decompressed, 0, size_uncompressed);
             stream.Close();
             return packetData_decompressed;
@@ -55,9 +51,9 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Decompressed data as byte array</returns>
         public static byte[] Decompress(byte[] to_decompress)
         {
-            ZlibStream stream = new ZlibStream(new System.IO.MemoryStream(to_decompress, false), CompressionMode.Decompress);
-            byte[] buffer = new byte[16 * 1024];
-            using (System.IO.MemoryStream decompressedBuffer = new System.IO.MemoryStream())
+            var stream = new ZlibStream(new MemoryStream(to_decompress, false), CompressionMode.Decompress);
+            var buffer = new byte[16 * 1024];
+            using (var decompressedBuffer = new MemoryStream())
             {
                 int read;
                 while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)

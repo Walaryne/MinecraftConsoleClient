@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     public class Set : Command
@@ -22,11 +18,11 @@ namespace MinecraftClient.Commands
                     {
                         return ""; //Success
                     }
-                    else return Translations.Get("cmd.set.format");
+                    return Translations.Get("cmd.set.format");
                 }
-                else return GetCmdDescTranslated();
+                return GetCmdDescTranslated();
             }
-            else return GetCmdDescTranslated();
+            return GetCmdDescTranslated();
         }
     }
 }

@@ -26,7 +26,8 @@
 
 using System;
 using System.IO;
-
+using Ionic.Crc;
+using Ionic.Zlib;
 namespace Ionic.Zip
 {
 
@@ -463,7 +464,7 @@ namespace Ionic.Zip
         ///   a password prior to calling <see cref="OpenReader()"/>, either by
         ///   setting the <see cref="Password"/> property on the entry, or the
         ///   <see cref="ZipFile.Password"/> property on the <c>ZipFile</c>
-        ///   itself. Or, you can use <see cref="OpenReader(String)" />, the
+        ///   itself. Or, you can use <see cref="OpenReader(string)" />, the
         ///   overload of OpenReader that accepts a password parameter.
         /// </para>
         ///
@@ -541,7 +542,7 @@ namespace Ionic.Zip
         /// </example>
         /// <seealso cref="Ionic.Zip.ZipEntry.Extract(System.IO.Stream)"/>
         /// <returns>The Stream for reading.</returns>
-        public Ionic.Crc.CrcCalculatorStream OpenReader()
+        public CrcCalculatorStream OpenReader()
         {
             // workitem 10923
             if (_container.ZipFile == null)
@@ -549,7 +550,7 @@ namespace Ionic.Zip
 
             // use the entry password if it is non-null,
             // else use the zipfile password, which is possibly null
-            return InternalOpenReader(this._Password ?? this._container.Password);
+            return InternalOpenReader(_Password ?? _container.Password);
         }
 
         /// <summary>
@@ -567,7 +568,7 @@ namespace Ionic.Zip
         ///
         /// <param name="password">The password to use for decrypting the entry.</param>
         /// <returns>The Stream for reading.</returns>
-        public Ionic.Crc.CrcCalculatorStream OpenReader(string password)
+        public CrcCalculatorStream OpenReader(string password)
         {
             // workitem 10923
             if (_container.ZipFile == null)
@@ -578,14 +579,14 @@ namespace Ionic.Zip
 
 
 
-        internal Ionic.Crc.CrcCalculatorStream InternalOpenReader(string password)
+        internal CrcCalculatorStream InternalOpenReader(string password)
         {
             ValidateCompression();
             ValidateEncryption();
             SetupCryptoForExtract(password);
 
             // workitem 7958
-            if (this._Source != ZipEntrySource.ZipFile)
+            if (_Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling OpenReader");
 
             // LeftToRead is a count of bytes remaining to be read (out)
@@ -593,19 +594,19 @@ namespace Ionic.Zip
             // It is the uncompressed size, unless ... there is no compression in which
             // case ...?  :< I'm not sure why it's not always UncompressedSize
             Int64 LeftToRead = (_CompressionMethod_FromZipFile == (short)CompressionMethod.None)
-                ? this._CompressedFileDataSize
-                : this.UncompressedSize;
+                ? _CompressedFileDataSize
+                : UncompressedSize;
 
-            Stream input = this.ArchiveStream;
+            Stream input = ArchiveStream;
 
-            this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            ArchiveStream.Seek(FileDataPosition, SeekOrigin.Begin);
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+            SharedUtilities.Workaround_Ladybug318918(ArchiveStream);
 
             _inputDecryptorStream = GetExtractDecryptor(input);
             Stream input3 = GetExtractDecompressor(_inputDecryptorStream);
 
-            return new Ionic.Crc.CrcCalculatorStream(input3, LeftToRead);
+            return new CrcCalculatorStream(input3, LeftToRead);
         }
 
 
@@ -688,15 +689,15 @@ namespace Ionic.Zip
 
             _container.ZipFile.Reset(false);
 
-            if (this._Source != ZipEntrySource.ZipFile)
+            if (_Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling any Extract method");
 
             OnBeforeExtract(baseDir);
             _ioOperationCanceled = false;
             string targetFileName = null;
             Stream output = null;
-            bool fileExistsBeforeExtraction = false;
-            bool checkLaterForResetDirTimes = false;
+            var fileExistsBeforeExtraction = false;
+            var checkLaterForResetDirTimes = false;
             try
             {
                 ValidateCompression();
@@ -735,7 +736,7 @@ namespace Ionic.Zip
 
                 // If no password explicitly specified, use the password on the entry itself,
                 // or on the zipfile itself.
-                string p = password ?? this._Password ?? this._container.Password;
+                string p = password ?? _Password ?? _container.Password;
                 if (_Encryption_FromZipFile != EncryptionAlgorithm.None)
                 {
                     if (p == null)
@@ -831,10 +832,10 @@ namespace Ionic.Zip
                         // the zip archive.
 
                         // String.Contains is not available on .NET CF 2.0
-                        if (this.FileName.IndexOf('/') != -1)
+                        if (FileName.IndexOf('/') != -1)
                         {
-                            string dirname = Path.GetDirectoryName(this.FileName);
-                            if (this._container.ZipFile[dirname] == null)
+                            string dirname = Path.GetDirectoryName(FileName);
+                            if (_container.ZipFile[dirname] == null)
                             {
                                 _SetTimes(Path.GetDirectoryName(targetFileName), false);
                             }
@@ -875,23 +876,18 @@ namespace Ionic.Zip
                 {
                     if (targetFileName != null)
                     {
-                        try
-                        {
-                            if (output != null) output.Close();
-                            // An exception has occurred. If the file exists, check
-                            // to see if it existed before we tried extracting.  If
-                            // it did not, attempt to remove the target file. There
-                            // is a small possibility that the existing file has
-                            // been extracted successfully, overwriting a previously
-                            // existing file, and an exception was thrown after that
-                            // but before final completion (setting times, etc). In
-                            // that case the file will remain, even though some
-                            // error occurred.  Nothing to be done about it.
-                            if (File.Exists(targetFileName) && !fileExistsBeforeExtraction)
-                                File.Delete(targetFileName);
-
-                        }
-                        finally { }
+                        if (output != null) output.Close();
+                        // An exception has occurred. If the file exists, check
+                        // to see if it existed before we tried extracting.  If
+                        // it did not, attempt to remove the target file. There
+                        // is a small possibility that the existing file has
+                        // been extracted successfully, overwriting a previously
+                        // existing file, and an exception was thrown after that
+                        // but before final completion (setting times, etc). In
+                        // that case the file will remain, even though some
+                        // error occurred.  Nothing to be done about it.
+                        if (File.Exists(targetFileName) && !fileExistsBeforeExtraction)
+                            File.Delete(targetFileName);
                     }
                 }
             }
@@ -962,7 +958,7 @@ namespace Ionic.Zip
 
         private int CheckExtractExistingFile(string baseDir, string targetFileName)
         {
-            int loop = 0;
+            var loop = 0;
             // returns: 0 == extract, 1 = don't, 2 = cancel
             do
             {
@@ -1003,7 +999,7 @@ namespace Ionic.Zip
         {
             if (nbytes == 0)
                 throw new BadReadException(String.Format("bad read of entry {0} from compressed archive.",
-                             this.FileName));
+                             FileName));
         }
 
 
@@ -1011,17 +1007,17 @@ namespace Ionic.Zip
 
         private Int32 ExtractOne(Stream output)
         {
-            Int32 CrcResult = 0;
-            Stream input = this.ArchiveStream;
+            var CrcResult = 0;
+            Stream input = ArchiveStream;
 
             try
             {
                 // change for workitem 8098
-                input.Seek(this.FileDataPosition, SeekOrigin.Begin);
+                input.Seek(FileDataPosition, SeekOrigin.Begin);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(input);
+                SharedUtilities.Workaround_Ladybug318918(input);
 
-                byte[] bytes = new byte[BufferSize];
+                var bytes = new byte[BufferSize];
 
                 // The extraction process varies depending on how the entry was
                 // stored.  It could have been encrypted, and it coould have
@@ -1030,8 +1026,8 @@ namespace Ionic.Zip
                 // the proper action in all cases.
 
                 Int64 LeftToRead = (_CompressionMethod_FromZipFile != (short)CompressionMethod.None)
-                    ? this.UncompressedSize
-                    : this._CompressedFileDataSize;
+                    ? UncompressedSize
+                    : _CompressedFileDataSize;
 
                 // Get a stream that either decrypts or not.
                 _inputDecryptorStream = GetExtractDecryptor(input);
@@ -1040,7 +1036,7 @@ namespace Ionic.Zip
 
                 Int64 bytesWritten = 0;
                 // As we read, we maybe decrypt, and then we maybe decompress. Then we write.
-                using (var s1 = new Ionic.Crc.CrcCalculatorStream(input3))
+                using (var s1 = new CrcCalculatorStream(input3))
                 {
                     while (LeftToRead > 0)
                     {
@@ -1098,7 +1094,7 @@ namespace Ionic.Zip
                 case (short)CompressionMethod.None:
                     return input2;
                 case (short)CompressionMethod.Deflate:
-                    return new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true);
+                    return new DeflateStream(input2, CompressionMode.Decompress, true);
 #if BZIP
                 case (short)CompressionMethod.BZip2:
                     return new Ionic.BZip2.BZip2InputStream(input2, true);
@@ -1182,7 +1178,7 @@ namespace Ionic.Zip
                 else
                 {
                     // workitem 6191
-                    DateTime AdjustedLastModified = Ionic.Zip.SharedUtilities.AdjustTime_Reverse(LastModified);
+                    DateTime AdjustedLastModified = SharedUtilities.AdjustTime_Reverse(LastModified);
 
 #if NETCF
                     int rc = NetCfFile.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
@@ -1200,7 +1196,7 @@ namespace Ionic.Zip
 #endif
                 }
             }
-            catch (System.IO.IOException ioexc1)
+            catch (IOException ioexc1)
             {
                 WriteStatus("failed to set time on {0}: {1}", fileOrDirectory, ioexc1.Message);
             }
@@ -1216,7 +1212,7 @@ namespace Ionic.Zip
         {
             get
             {
-                string alg = String.Empty;
+                var alg = String.Empty;
                 switch (_UnsupportedAlgorithmId)
                 {
                     case 0:
@@ -1269,8 +1265,8 @@ namespace Ionic.Zip
         {
             get
             {
-                string meth = String.Empty;
-                switch ((int)_CompressionMethod)
+                var meth = String.Empty;
+                switch (_CompressionMethod)
                 {
                     case 0:
                         meth = "Store";
@@ -1318,9 +1314,8 @@ namespace Ionic.Zip
                 if (_UnsupportedAlgorithmId != 0)
                     throw new ZipException(String.Format("Cannot extract: Entry {0} is encrypted with an algorithm not supported by DotNetZip: {1}",
                                                          FileName, UnsupportedAlgorithm));
-                else
-                    throw new ZipException(String.Format("Cannot extract: Entry {0} uses an unsupported encryption algorithm ({1:X2})",
-                                                         FileName, (int)Encryption));
+                throw new ZipException(String.Format("Cannot extract: Entry {0} uses an unsupported encryption algorithm ({1:X2})",
+                                                     FileName, (int)Encryption));
             }
         }
 
@@ -1348,9 +1343,9 @@ namespace Ionic.Zip
                 if (password == null)
                     throw new ZipException("Missing password.");
 
-                this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
+                ArchiveStream.Seek(FileDataPosition - 12, SeekOrigin.Begin);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+                SharedUtilities.Workaround_Ladybug318918(ArchiveStream);
                 _zipCrypto_forExtract = ZipCrypto.ForRead(password, this);
             }
 
@@ -1396,7 +1391,7 @@ namespace Ionic.Zip
                 // Sometimes the name on the entry starts with a slash.
                 // Rather than unpack to the root of the volume, we're going to
                 // drop the slash and unpack to the specified base directory.
-                string f = this.FileName.Replace("\\","/");
+                string f = FileName.Replace("\\","/");
 
                 // workitem 11772: remove drive letter with separator
                 if (f.IndexOf(':') == 1)

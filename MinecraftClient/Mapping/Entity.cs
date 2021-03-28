@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using MinecraftClient.Inventory;
-
 namespace MinecraftClient.Mapping
 {
     /// <summary>
@@ -88,11 +87,11 @@ namespace MinecraftClient.Mapping
         public Entity(int ID, EntityType type, Location location)
         {
             this.ID = ID;
-            this.Type = type;
-            this.Location = location;
-            this.Health = 1.0f;
-            this.Equipment = new Dictionary<int, Item>();
-            this.Item = new Item(ItemType.Air, 0, null);
+            Type = type;
+            Location = location;
+            Health = 1.0f;
+            Equipment = new Dictionary<int, Item>();
+            Item = new Item(ItemType.Air, 0, null);
         }
         /// <summary>
         /// Create a new entity based on Entity ID, Entity Type, location, name and UUID
@@ -105,13 +104,13 @@ namespace MinecraftClient.Mapping
         public Entity(int ID, EntityType type, Location location, Guid uuid, string name)
         {
             this.ID = ID;
-            this.Type = type;
-            this.Location = location;
-            this.UUID = uuid;
-            this.Name = name;
-            this.Health = 1.0f;
-            this.Equipment = new Dictionary<int, Item>();
-            this.Item = new Item(ItemType.Air, 0, null);
+            Type = type;
+            Location = location;
+            UUID = uuid;
+            Name = name;
+            Health = 1.0f;
+            Equipment = new Dictionary<int, Item>();
+            Item = new Item(ItemType.Air, 0, null);
         }
     }
 }

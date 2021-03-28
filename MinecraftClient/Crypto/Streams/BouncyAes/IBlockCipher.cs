@@ -1,5 +1,3 @@
-using System;
-
 namespace Org.BouncyCastle.Crypto
 {
 	/// <remarks>Base interface for a symmetric key block cipher.</remarks>

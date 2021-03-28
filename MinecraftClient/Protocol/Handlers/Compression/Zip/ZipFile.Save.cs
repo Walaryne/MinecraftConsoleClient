@@ -26,9 +26,11 @@
 
 
 using System;
-using System.IO;
 using System.Collections.Generic;
-
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading;
 namespace Ionic.Zip
 {
 
@@ -51,19 +53,19 @@ namespace Ionic.Zip
         /// <param name='filename'>the name of the file to be deleted</param>
         private void DeleteFileWithRetry(string filename)
         {
-            bool done = false;
-            int nRetries = 3;
-            for (int i=0; i < nRetries && !done; i++)
+            var done = false;
+            var nRetries = 3;
+            for (var i=0; i < nRetries && !done; i++)
             {
                 try
                 {
                     File.Delete(filename);
                     done = true;
                 }
-                catch (System.UnauthorizedAccessException)
+                catch (UnauthorizedAccessException)
                 {
                     Console.WriteLine("************************************************** Retry delete.");
-                    System.Threading.Thread.Sleep(200+i*200);
+                    Thread.Sleep(200+i*200);
                 }
             }
         }
@@ -111,7 +113,7 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         ///
-        /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(String, System.IO.Stream)"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, System.IO.Stream)"/>
         ///
         /// <exception cref="Ionic.Zip.BadStateException">
         ///   Thrown if you haven't specified a location or stream for saving the zip,
@@ -130,7 +132,7 @@ namespace Ionic.Zip
         {
             try
             {
-                bool thisSaveUsedZip64 = false;
+                var thisSaveUsedZip64 = false;
                 _saveOperationCanceled = false;
                 _numberOfSegmentsForMostRecentSave = 0;
                 OnSaveStarted();
@@ -159,9 +161,9 @@ namespace Ionic.Zip
 
 
                 // write an entry in the zip for each file
-                int n = 0;
+                var n = 0;
                 // workitem 9831
-                ICollection<ZipEntry> c = (SortEntriesBeforeSaving) ? EntriesSorted : Entries;
+                var c = (SortEntriesBeforeSaving) ? EntriesSorted : Entries;
                 foreach (ZipEntry e in c) // _entries.Values
                 {
                     OnSaveEntry(n, e, true);
@@ -205,7 +207,7 @@ namespace Ionic.Zip
                 _contentsChanged = false;
 
                 thisSaveUsedZip64 |= directoryNeededZip64;
-                _OutputUsesZip64 = new Nullable<bool>(thisSaveUsedZip64);
+                _OutputUsesZip64 = thisSaveUsedZip64;
 
 
                 // do the rename as necessary
@@ -222,13 +224,13 @@ namespace Ionic.Zip
                     if (_saveOperationCanceled)
                         return;
 
-                    if (_fileAlreadyExists && this._readstream != null)
+                    if (_fileAlreadyExists && _readstream != null)
                     {
                         // This means we opened and read a zip file.
                         // If we are now saving to the same file, we need to close the
                         // orig file, first.
-                        this._readstream.Close();
-                        this._readstream = null;
+                        _readstream.Close();
+                        _readstream = null;
                         // the archiveStream for each entry needs to be null
                         foreach (var e in c)
                         {
@@ -325,7 +327,6 @@ namespace Ionic.Zip
                 CleanupAfterSaveOperation();
             }
 
-            return;
         }
 
 
@@ -372,7 +373,7 @@ namespace Ionic.Zip
                         _writestream.Dispose();
 #endif
                     }
-                    catch (System.IO.IOException) { }
+                    catch (IOException) { }
                 }
                 _writestream = null;
 
@@ -471,7 +472,7 @@ namespace Ionic.Zip
 
             _name = fileName;
             if (Directory.Exists(_name))
-                throw new ZipException("Bad Directory", new System.ArgumentException("That name specifies an existing directory. Please specify a filename.", "fileName"));
+                throw new ZipException("Bad Directory", new ArgumentException("That name specifies an existing directory. Please specify a filename.", "fileName"));
             _contentsChanged = true;
             _fileAlreadyExists = File.Exists(_name);
             Save();
@@ -666,11 +667,10 @@ namespace Ionic.Zip
 #if NETCF
                     throw new ZipException("The archive requires a ZIP64 Central Directory. Consider enabling ZIP64 extensions.");
 #else
-                    System.Diagnostics.StackFrame sf = new System.Diagnostics.StackFrame(1);
+                    var sf = new StackFrame(1);
                     if (sf.GetMethod().DeclaringType == typeof(ZipFile))
                         throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipFile.UseZip64WhenSaving property.");
-                    else
-                        throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipOutputStream.EnableZip64 property.");
+                    throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipOutputStream.EnableZip64 property.");
 #endif
 
                 }
@@ -680,7 +680,7 @@ namespace Ionic.Zip
                 if (startSegment != 0)
                 {
                     UInt32 thisSegment = zss.ComputeSegment(a.Length + a2.Length);
-                    int i = 16;
+                    var i = 16;
                     // number of this disk
                     Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
                     i += 4;
@@ -711,8 +711,8 @@ namespace Ionic.Zip
                 // The assumption is the central directory is never split across
                 // segment boundaries.
 
-                UInt16 thisSegment = (UInt16) zss.ComputeSegment(a2.Length);
-                int i = 4;
+                var thisSegment = (UInt16) zss.ComputeSegment(a2.Length);
+                var i = 4;
                 // number of this disk
                 Array.Copy(BitConverter.GetBytes(thisSegment), 0, a2, i, 2);
                 i += 2;
@@ -732,7 +732,7 @@ namespace Ionic.Zip
         }
 
 
-        private static System.Text.Encoding GetEncoding(ZipContainer container, string t)
+        private static Encoding GetEncoding(ZipContainer container, string t)
         {
             switch (container.AlternateEncodingUsage)
             {
@@ -761,9 +761,9 @@ namespace Ionic.Zip
                                                         string comment,
                                                         ZipContainer container)
         {
-            System.Text.Encoding encoding = GetEncoding(container, comment);
-            int j = 0;
-            int bufferLength = 22;
+            Encoding encoding = GetEncoding(container, comment);
+            var j = 0;
+            var bufferLength = 22;
             byte[] block = null;
             Int16 commentLength = 0;
             if ((comment != null) && (comment.Length != 0))
@@ -772,9 +772,9 @@ namespace Ionic.Zip
                 commentLength = (Int16)block.Length;
             }
             bufferLength += commentLength;
-            byte[] bytes = new byte[bufferLength];
+            var bytes = new byte[bufferLength];
 
-            int i = 0;
+            var i = 0;
             // signature
             byte[] sig = BitConverter.GetBytes(ZipConstants.EndOfCentralDirectorySignature);
             Array.Copy(sig, 0, bytes, i, 4);
@@ -838,8 +838,8 @@ namespace Ionic.Zip
             if ((comment == null) || (comment.Length == 0))
             {
                 // no comment!
-                bytes[i++] = (byte)0;
-                bytes[i++] = (byte)0;
+                bytes[i++] = 0;
+                bytes[i++] = 0;
             }
             else
             {
@@ -872,9 +872,9 @@ namespace Ionic.Zip
         {
             const int bufferLength = 12 + 44 + 20;
 
-            byte[] bytes = new byte[bufferLength];
+            var bytes = new byte[bufferLength];
 
-            int i = 0;
+            var i = 0;
             // signature
             byte[] sig = BitConverter.GetBytes(ZipConstants.Zip64EndOfCentralDirectoryRecordSignature);
             Array.Copy(sig, 0, bytes, i, 4);
@@ -900,7 +900,7 @@ namespace Ionic.Zip
             // offset 16
             // number of the disk, and the disk with the start of the central dir.
             // (this may change later)
-            for (int j = 0; j < 8; j++)
+            for (var j = 0; j < 8; j++)
                 bytes[i++] = 0x00;
 
             // offset 24
@@ -927,7 +927,7 @@ namespace Ionic.Zip
             // offset 60
             // number of the disk with the start of the zip64 eocd
             // (this will change later)  (it will?)
-            uint x2 = (numSegments==0)?0:(uint)(numSegments-1);
+            uint x2 = (numSegments==0)?0:numSegments-1;
             Array.Copy(BitConverter.GetBytes(x2), 0, bytes, i, 4);
             i+=4;
 
@@ -951,7 +951,7 @@ namespace Ionic.Zip
         {
             // Cannot just emit _entries.Count, because some of the entries
             // may have been skipped.
-            int count = 0;
+            var count = 0;
             foreach (var entry in _entries)
                 if (entry.IncludedInMostRecentSave) count++;
             return count;

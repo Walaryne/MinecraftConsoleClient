@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Net.Sockets;
-using MinecraftClient.Mapping;
-using MinecraftClient.Crypto;
 using MinecraftClient.Inventory;
-using MinecraftClient.Mapping.EntityPalettes;
 using MinecraftClient.Inventory.ItemPalettes;
-
+using MinecraftClient.Mapping;
+using MinecraftClient.Mapping.EntityPalettes;
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -27,7 +25,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <param name="protocol">Protocol version</param>
         public DataTypes(int protocol)
         {
-            this.protocolversion = protocol;
+            protocolversion = protocol;
         }
 
         /// <summary>
@@ -38,8 +36,8 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>The data read from the cache as an array</returns>
         public byte[] ReadData(int offset, Queue<byte> cache)
         {
-            byte[] result = new byte[offset];
-            for (int i = 0; i < offset; i++)
+            var result = new byte[offset];
+            for (var i = 0; i < offset; i++)
                 result[i] = cache.Dequeue();
             return result;
         }
@@ -56,7 +54,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 return Encoding.UTF8.GetString(ReadData(length, cache));
             }
-            else return "";
+            return "";
         }
 
         /// <summary>
@@ -159,8 +157,8 @@ namespace MinecraftClient.Protocol.Handlers
         public ushort[] ReadNextUShortsLittleEndian(int amount, Queue<byte> cache)
         {
             byte[] rawValues = ReadData(2 * amount, cache);
-            ushort[] result = new ushort[amount];
-            for (int i = 0; i < amount; i++)
+            var result = new ushort[amount];
+            for (var i = 0; i < amount; i++)
                 result[i] = BitConverter.ToUInt16(rawValues, i * 2);
             return result;
         }
@@ -173,7 +171,7 @@ namespace MinecraftClient.Protocol.Handlers
         public Guid ReadNextUUID(Queue<byte> cache)
         {
             byte[] javaUUID = ReadData(16, cache);
-            Guid guid = new Guid(javaUUID);
+            var guid = new Guid(javaUUID);
             if (BitConverter.IsLittleEndian)
                 guid = guid.ToLittleEndian();
             return guid;
@@ -199,8 +197,8 @@ namespace MinecraftClient.Protocol.Handlers
         public ulong[] ReadNextULongArray(Queue<byte> cache)
         {
             int len = ReadNextVarInt(cache);
-            ulong[] result = new ulong[len];
-            for (int i = 0; i < len; i++)
+            var result = new ulong[len];
+            for (var i = 0; i < len; i++)
                 result[i] = ReadNextULong(cache);
             return result;
         }
@@ -233,9 +231,9 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>The integer</returns>
         public int ReadNextVarIntRAW(SocketWrapper socket)
         {
-            int i = 0;
-            int j = 0;
-            int k = 0;
+            var i = 0;
+            var j = 0;
+            var k = 0;
             while (true)
             {
                 k = socket.ReadDataRAW(1)[0];
@@ -253,10 +251,10 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>The integer</returns>
         public int ReadNextVarInt(Queue<byte> cache)
         {
-            string rawData = BitConverter.ToString(cache.ToArray());
-            int i = 0;
-            int j = 0;
-            int k = 0;
+            var rawData = BitConverter.ToString(cache.ToArray());
+            var i = 0;
+            var j = 0;
+            var k = 0;
             while (true)
             {
                 k = ReadNextByte(cache);
@@ -306,7 +304,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>The long value</returns>
         public long ReadNextVarLong(Queue<byte> cache)
         {
-            int numRead = 0;
+            var numRead = 0;
             long result = 0;
             byte read;
             do
@@ -348,7 +346,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>The item that was read or NULL for an empty slot</returns>
         public Item ReadNextItemSlot(Queue<byte> cache, ItemPalette itemPalette)
         {
-            List<byte> slotData = new List<byte>();
+            var slotData = new List<byte>();
             if (protocolversion > Protocol18Handler.MC113Version)
             {
                 // MC 1.13 and greater
@@ -357,12 +355,11 @@ namespace MinecraftClient.Protocol.Handlers
                 {
                     ItemType type = itemPalette.FromId(ReadNextVarInt(cache));
                     byte itemCount = ReadNextByte(cache);
-                    Dictionary<string, object> nbt = ReadNextNbt(cache);
+                    var nbt = ReadNextNbt(cache);
                     return new Item(type, itemCount, nbt);
                 }
-                else return null;
+                return null;
             }
-            else
             {
                 // MC 1.12.2 and lower
                 short itemID = ReadNextShort(cache);
@@ -370,7 +367,7 @@ namespace MinecraftClient.Protocol.Handlers
                     return null;
                 byte itemCount = ReadNextByte(cache);
                 short itemDamage = ReadNextShort(cache);
-                Dictionary<string, object> nbt = ReadNextNbt(cache);
+                var nbt = ReadNextNbt(cache);
                 return new Item(itemPalette.FromId(itemID), itemCount, nbt);
             }
         }
@@ -384,7 +381,7 @@ namespace MinecraftClient.Protocol.Handlers
         public Entity ReadNextEntity(Queue<byte> cache, EntityPalette entityPalette, bool living)
         {
             int entityID = ReadNextVarInt(cache);
-            Guid entityUUID = Guid.Empty;
+            var entityUUID = Guid.Empty;
 
             if (protocolversion > Protocol18Handler.MC18Version)
             {
@@ -429,7 +426,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// </summary>
         private Dictionary<string, object> ReadNextNbt(Queue<byte> cache, bool root)
         {
-            Dictionary<string, object> nbtData = new Dictionary<string, object>();
+            var nbtData = new Dictionary<string, object>();
 
             if (root)
             {
@@ -439,7 +436,7 @@ namespace MinecraftClient.Protocol.Handlers
                     return nbtData;
                 }
                 if (cache.Peek() != 10) // TAG_Compound
-                    throw new System.IO.InvalidDataException("Failed to decode NBT: Does not start with TAG_Compound");
+                    throw new InvalidDataException("Failed to decode NBT: Does not start with TAG_Compound");
                 ReadNextByte(cache); // Tag type (TAG_Compound)
 
                 // NBT root name
@@ -490,8 +487,8 @@ namespace MinecraftClient.Protocol.Handlers
                 case 9: // TAG_List
                     int listType = ReadNextByte(cache);
                     int listLength = ReadNextInt(cache);
-                    object[] listItems = new object[listLength];
-                    for (int i = 0; i < listLength; i++)
+                    var listItems = new object[listLength];
+                    for (var i = 0; i < listLength; i++)
                         listItems[i] = ReadNbtField(cache, listType);
                     return listItems;
                 case 10: // TAG_Compound
@@ -500,24 +497,24 @@ namespace MinecraftClient.Protocol.Handlers
                     listType = 3;
                     listLength = ReadNextInt(cache);
                     listItems = new object[listLength];
-                    for (int i = 0; i < listLength; i++)
+                    for (var i = 0; i < listLength; i++)
                         listItems[i] = ReadNbtField(cache, listType);
                     return listItems;
                 case 12: // TAG_Long_Array
                     listType = 4;
                     listLength = ReadNextInt(cache);
                     listItems = new object[listLength];
-                    for (int i = 0; i < listLength; i++)
+                    for (var i = 0; i < listLength; i++)
                         listItems[i] = ReadNbtField(cache, listType);
                     return listItems;
                 default:
-                    throw new System.IO.InvalidDataException("Failed to decode NBT: Unknown field type " + fieldType);
+                    throw new InvalidDataException("Failed to decode NBT: Unknown field type " + fieldType);
             }
         }
 
         public Dictionary<int, object> ReadNextMetadata(Queue<byte> cache, ItemPalette itemPalette)
         {
-            Dictionary<int, object> data = new Dictionary<int, object>();
+            var data = new Dictionary<int, object>();
             byte key = ReadNextByte(cache);
             while (key != 0xff)
             {
@@ -571,7 +568,7 @@ namespace MinecraftClient.Protocol.Handlers
                         value = ReadNextBool(cache);
                         break;
                     case 8: // Rotation (3x floats)
-                        List<float> t = new List<float>();
+                        var t = new List<float>();
                         t.Add(ReadNextFloat(cache));
                         t.Add(ReadNextFloat(cache));
                         t.Add(ReadNextFloat(cache));
@@ -624,7 +621,7 @@ namespace MinecraftClient.Protocol.Handlers
                         }
                         break;
                     case 16: // Villager Data (3x VarInt)
-                        List<int> d = new List<int>();
+                        var d = new List<int>();
                         d.Add(ReadNextVarInt(cache));
                         d.Add(ReadNextVarInt(cache));
                         d.Add(ReadNextVarInt(cache));
@@ -640,7 +637,7 @@ namespace MinecraftClient.Protocol.Handlers
                         value = ReadNextVarInt(cache);
                         break;
                     default:
-                        throw new System.IO.InvalidDataException("Unknown Metadata Type ID " + type + ". Is this up to date for new MC Version?");
+                        throw new InvalidDataException("Unknown Metadata Type ID " + type + ". Is this up to date for new MC Version?");
                 }
                 data[key] = value;
                 key = ReadNextByte(cache);
@@ -692,7 +689,7 @@ namespace MinecraftClient.Protocol.Handlers
             if (nbt == null || nbt.Count == 0)
                 return new byte[] { 0 }; // TAG_End
 
-            List<byte> bytes = new List<byte>();
+            var bytes = new List<byte>();
 
             if (root)
             {
@@ -741,47 +738,47 @@ namespace MinecraftClient.Protocol.Handlers
                 fieldType = 1; // TAG_Byte
                 return new[] { (byte)obj };
             }
-            else if (obj is short)
+            if (obj is short)
             {
                 fieldType = 2; // TAG_Short
                 return GetShort((short)obj);
             }
-            else if (obj is int)
+            if (obj is int)
             {
                 fieldType = 3; // TAG_Int
                 return GetInt((int)obj);
             }
-            else if (obj is long)
+            if (obj is long)
             {
                 fieldType = 4; // TAG_Long
                 return GetLong((long)obj);
             }
-            else if (obj is float)
+            if (obj is float)
             {
                 fieldType = 5; // TAG_Float
                 return GetFloat((float)obj);
             }
-            else if (obj is double)
+            if (obj is double)
             {
                 fieldType = 6; // TAG_Double
                 return GetDouble((double)obj);
             }
-            else if (obj is byte[])
+            if (obj is byte[])
             {
                 fieldType = 7; // TAG_Byte_Array
                 return (byte[])obj;
             }
-            else if (obj is string)
+            if (obj is string)
             {
                 fieldType = 8; // TAG_String
                 byte[] stringBytes = Encoding.UTF8.GetBytes((string)obj);
                 return ConcatBytes(GetUShort((ushort)stringBytes.Length), stringBytes);
             }
-            else if (obj is object[])
+            if (obj is object[])
             {
                 fieldType = 9; // TAG_List
 
-                List<object> list = new List<object>((object[])obj);
+                var list = new List<object>((object[])obj);
                 int arrayLengthTotal = list.Count;
 
                 // Treat empty list as TAG_Byte, length 0
@@ -796,49 +793,46 @@ namespace MinecraftClient.Protocol.Handlers
 
                 // Encode further list items, check they have the same type
                 byte subsequentItemType;
-                List<byte> subsequentItemsBytes = new List<byte>();
+                var subsequentItemsBytes = new List<byte>();
                 foreach (object item in list)
                 {
                     subsequentItemsBytes.AddRange(GetNbtField(item, out subsequentItemType));
                     if (subsequentItemType != firstItemType)
-                        throw new System.IO.InvalidDataException(
+                        throw new InvalidDataException(
                             "GetNbt: Cannot encode object[] list with mixed types: " + firstItemTypeString + ", " + item.GetType().Name + " into NBT!");
                 }
 
                 // Build NBT list: type, length, item array
                 return ConcatBytes(new[] { firstItemType }, GetInt(arrayLengthTotal), firstItemBytes, subsequentItemsBytes.ToArray());
             }
-            else if (obj is Dictionary<string, object>)
+            if (obj is Dictionary<string, object>)
             {
                 fieldType = 10; // TAG_Compound
                 return GetNbt((Dictionary<string, object>)obj, false);
             }
-            else if (obj is int[])
+            if (obj is int[])
             {
                 fieldType = 11; // TAG_Int_Array
 
-                int[] srcIntList = (int[])obj;
-                List<byte> encIntList = new List<byte>();
+                var srcIntList = (int[])obj;
+                var encIntList = new List<byte>();
                 encIntList.AddRange(GetInt(srcIntList.Length));
                 foreach (int item in srcIntList)
                     encIntList.AddRange(GetInt(item));
                 return encIntList.ToArray();
             }
-            else if (obj is long[])
+            if (obj is long[])
             {
                 fieldType = 12; // TAG_Long_Array
 
-                long[] srcLongList = (long[])obj;
-                List<byte> encLongList = new List<byte>();
+                var srcLongList = (long[])obj;
+                var encLongList = new List<byte>();
                 encLongList.AddRange(GetInt(srcLongList.Length));
                 foreach (long item in srcLongList)
                     encLongList.AddRange(GetLong(item));
                 return encLongList.ToArray();
             }
-            else
-            {
-                throw new System.IO.InvalidDataException("GetNbt: Cannot encode data type " + obj.GetType().Name + " into NBT!");
-            }
+            throw new InvalidDataException("GetNbt: Cannot encode data type " + obj.GetType().Name + " into NBT!");
         }
 
         /// <summary>
@@ -848,7 +842,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Byte array for this integer</returns>
         public byte[] GetVarInt(int paramInt)
         {
-            List<byte> bytes = new List<byte>();
+            var bytes = new List<byte>();
             while ((paramInt & -128) != 0)
             {
                 bytes.Add((byte)(paramInt & 127 | 128));
@@ -865,8 +859,8 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Byte array for this boolean</returns>
         public byte[] GetBool(bool paramBool)
         {
-            List<byte> bytes = new List<byte>();
-            bytes.Add((byte)Convert.ToByte(paramBool));
+            var bytes = new List<byte>();
+            bytes.Add(Convert.ToByte(paramBool));
             return bytes.ToArray();
         }
 
@@ -955,7 +949,7 @@ namespace MinecraftClient.Protocol.Handlers
                 Array.Reverse(length); //Endianness
                 return ConcatBytes(length, array);
             }
-            else return ConcatBytes(GetVarInt(array.Length), array);
+            return ConcatBytes(GetVarInt(array.Length), array);
         }
 
         /// <summary>
@@ -999,7 +993,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Item slot representation</returns>
         public byte[] GetItemSlot(Item item, ItemPalette itemPalette)
         {
-            List<byte> slotData = new List<byte>();
+            var slotData = new List<byte>();
             if (protocolversion > Protocol18Handler.MC113Version)
             {
                 // MC 1.13 and greater
@@ -1043,7 +1037,7 @@ namespace MinecraftClient.Protocol.Handlers
                 case Direction.South: return 3;
                 case Direction.West: return 4;
                 case Direction.East: return 5;
-                default: throw new NotImplementedException("Unknown direction: " + direction.ToString());
+                default: throw new NotImplementedException("Unknown direction: " + direction);
             }
         }
 
@@ -1054,7 +1048,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>Array containing all the data</returns>
         public byte[] ConcatBytes(params byte[][] bytes)
         {
-            List<byte> result = new List<byte>();
+            var result = new List<byte>();
             foreach (byte[] array in bytes)
                 result.AddRange(array);
             return result.ToArray();

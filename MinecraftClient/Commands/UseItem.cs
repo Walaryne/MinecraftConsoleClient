@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Commands
 {
     class UseItem : Command
@@ -18,7 +14,7 @@ namespace MinecraftClient.Commands
                 handler.UseItemOnHand();
                 return Translations.Get("cmd.useitem.use");
             }
-            else return Translations.Get("extra.inventory_required");
+            return Translations.Get("extra.inventory_required");
         }
     }
 }

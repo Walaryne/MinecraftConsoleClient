@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
-
 namespace MinecraftClient
 {
     /// <summary>
@@ -11,8 +11,8 @@ namespace MinecraftClient
     /// </summary>
     public class FileMonitor : IDisposable
     {
-        private FileSystemWatcher monitor = null;
-        private Thread polling = null;
+        private FileSystemWatcher monitor;
+        private Thread polling;
 
         /// <summary>
         /// Create a new FileMonitor and start monitoring
@@ -24,7 +24,7 @@ namespace MinecraftClient
         {
             if (Settings.DebugMessages)
             {
-                string callerClass = new System.Diagnostics.StackFrame(1).GetMethod().DeclaringType.Name;
+                string callerClass = new StackFrame(1).GetMethod().DeclaringType.Name;
                 ConsoleIO.WriteLineFormatted(Translations.Get("filemonitor.init", callerClass, Path.Combine(folder, filename)));
             }
 
@@ -42,13 +42,13 @@ namespace MinecraftClient
             {
                 if (Settings.DebugMessages)
                 {
-                    string callerClass = new System.Diagnostics.StackFrame(1).GetMethod().DeclaringType.Name;
+                    string callerClass = new StackFrame(1).GetMethod().DeclaringType.Name;
                     ConsoleIO.WriteLineFormatted(Translations.Get("filemonitor.fail", callerClass));
                 }
 
                 monitor = null;
                 polling = new Thread(() => PollingThread(folder, filename, handler));
-                polling.Name = String.Format("{0} Polling thread: {1}", this.GetType().Name, Path.Combine(folder, filename));
+                polling.Name = String.Format("{0} Polling thread: {1}", GetType().Name, Path.Combine(folder, filename));
                 polling.Start();
             }
         }
@@ -93,12 +93,12 @@ namespace MinecraftClient
         /// <returns>Last write time, or DateTime.MinValue if the file does not exist</returns>
         private DateTime GetLastWrite(string path)
         {
-            FileInfo fileInfo = new FileInfo(path);
+            var fileInfo = new FileInfo(path);
             if (fileInfo.Exists)
             {
                 return fileInfo.LastWriteTime;
             }
-            else return DateTime.MinValue;
+            return DateTime.MinValue;
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace MinecraftClient
         /// <returns>All lines</returns>
         public static string[] ReadAllLinesWithRetries(string filePath, int maxTries = 3, Encoding encoding = null)
         {
-            int attempt = 0;
+            var attempt = 0;
             if (encoding == null)
                 encoding = Encoding.UTF8;
             while (true)
@@ -139,7 +139,7 @@ namespace MinecraftClient
         /// <param name="encoding">Encoding (default is UTF8)</param>
         public static void WriteAllLinesWithRetries(string filePath, IEnumerable<string> lines, int maxTries = 3, Encoding encoding = null)
         {
-            int attempt = 0;
+            var attempt = 0;
             if (encoding == null)
                 encoding = Encoding.UTF8;
             while (true)

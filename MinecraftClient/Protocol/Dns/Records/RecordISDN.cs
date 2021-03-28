@@ -1,4 +1,4 @@
-using System;
+
 /* http://tools.ietf.org/rfc/rfc1183.txt
 
 3.2. The ISDN RR

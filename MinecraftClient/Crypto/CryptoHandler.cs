@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Security.Cryptography;
 using System.IO;
-
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using MinecraftClient.Crypto.Streams;
 namespace MinecraftClient.Crypto
 {
     /// <summary>
@@ -25,15 +24,15 @@ namespace MinecraftClient.Crypto
 
             byte[] SeqOID = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01 };
 
-            System.IO.MemoryStream ms = new System.IO.MemoryStream(x509key);
-            System.IO.BinaryReader reader = new System.IO.BinaryReader(ms);
+            var ms = new MemoryStream(x509key);
+            var reader = new BinaryReader(ms);
 
             if (reader.ReadByte() == 0x30)
                 ReadASNLength(reader); //skip the size
             else
                 return null;
 
-            int identifierSize = 0; //total length of Object Identifier section
+            var identifierSize = 0; //total length of Object Identifier section
             if (reader.ReadByte() == 0x30)
                 identifierSize = ReadASNLength(reader);
             else
@@ -42,7 +41,7 @@ namespace MinecraftClient.Crypto
             if (reader.ReadByte() == 0x06) //is the next element an object identifier?
             {
                 int oidLength = ReadASNLength(reader);
-                byte[] oidBytes = new byte[oidLength];
+                var oidBytes = new byte[oidLength];
                 reader.Read(oidBytes, 0, oidBytes.Length);
                 if (oidBytes.SequenceEqual(SeqOID) == false) //is the object identifier rsaEncryption PKCS#1?
                     return null;
@@ -61,11 +60,11 @@ namespace MinecraftClient.Crypto
                     if (reader.ReadByte() == 0x02) //is it an integer?
                     {
                         int modulusSize = ReadASNLength(reader);
-                        byte[] modulus = new byte[modulusSize];
+                        var modulus = new byte[modulusSize];
                         reader.Read(modulus, 0, modulus.Length);
                         if (modulus[0] == 0x00) //strip off the first byte if it's 0
                         {
-                            byte[] tempModulus = new byte[modulus.Length - 1];
+                            var tempModulus = new byte[modulus.Length - 1];
                             Array.Copy(modulus, 1, tempModulus, 0, modulus.Length - 1);
                             modulus = tempModulus;
                         }
@@ -73,11 +72,11 @@ namespace MinecraftClient.Crypto
                         if (reader.ReadByte() == 0x02) //is it an integer?
                         {
                             int exponentSize = ReadASNLength(reader);
-                            byte[] exponent = new byte[exponentSize];
+                            var exponent = new byte[exponentSize];
                             reader.Read(exponent, 0, exponent.Length);
 
-                            RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
-                            RSAParameters RSAKeyInfo = new RSAParameters();
+                            var RSA = new RSACryptoServiceProvider();
+                            var RSAKeyInfo = new RSAParameters();
                             RSAKeyInfo.Modulus = modulus;
                             RSAKeyInfo.Exponent = exponent;
                             RSA.ImportParameters(RSAKeyInfo);
@@ -95,7 +94,7 @@ namespace MinecraftClient.Crypto
         /// <param name="reader">StreamReader containing the stream to decode</param>
         /// <returns>Return the read length</returns>
 
-        private static int ReadASNLength(System.IO.BinaryReader reader)
+        private static int ReadASNLength(BinaryReader reader)
         {
             //Note: this method only reads lengths up to 4 bytes long as
             //this is satisfactory for the majority of situations.
@@ -103,7 +102,7 @@ namespace MinecraftClient.Crypto
             if ((length & 0x00000080) == 0x00000080) //is the length greater than 1 byte
             {
                 int count = length & 0x0000000f;
-                byte[] lengthBytes = new byte[4];
+                var lengthBytes = new byte[4];
                 reader.Read(lengthBytes, 4 - count, count);
                 Array.Reverse(lengthBytes); //
                 length = BitConverter.ToInt32(lengthBytes, 0);
@@ -118,7 +117,7 @@ namespace MinecraftClient.Crypto
 
         public static byte[] GenerateAESPrivateKey()
         {
-            AesManaged AES = new AesManaged();
+            var AES = new AesManaged();
             AES.KeySize = 128; AES.GenerateKey();
             return AES.Key;
         }
@@ -133,7 +132,8 @@ namespace MinecraftClient.Crypto
 
         public static string getServerHash(string serverID, byte[] PublicKey, byte[] SecretKey)
         {
-            byte[] hash = digest(new byte[][] { Encoding.GetEncoding("iso-8859-1").GetBytes(serverID), SecretKey, PublicKey });
+            byte[] hash = digest(new[]
+                                     { Encoding.GetEncoding("iso-8859-1").GetBytes(serverID), SecretKey, PublicKey });
             bool negative = (hash[0] & 0x80) == 0x80;
             if (negative) { hash = TwosComplementLittleEndian(hash); }
             string result = GetHexString(hash).TrimStart('0');
@@ -149,8 +149,8 @@ namespace MinecraftClient.Crypto
 
         private static byte[] digest(byte[][] tohash)
         {
-            SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider();
-            for (int i = 0; i < tohash.Length; i++)
+            var sha1 = new SHA1CryptoServiceProvider();
+            for (var i = 0; i < tohash.Length; i++)
                 sha1.TransformBlock(tohash[i], 0, tohash[i].Length, tohash[i], 0);
             sha1.TransformFinalBlock(new byte[] { }, 0, 0);
             return sha1.Hash;
@@ -164,8 +164,8 @@ namespace MinecraftClient.Crypto
 
         private static string GetHexString(byte[] p)
         {
-            string result = string.Empty;
-            for (int i = 0; i < p.Length; i++)
+            var result = string.Empty;
+            for (var i = 0; i < p.Length; i++)
                 result += p[i].ToString("x2");
             return result;
         }
@@ -179,7 +179,7 @@ namespace MinecraftClient.Crypto
         private static byte[] TwosComplementLittleEndian(byte[] p)
         {
             int i;
-            bool carry = true;
+            var carry = true;
             for (i = p.Length - 1; i >= 0; i--)
             {
                 p[i] = (byte)~p[i];
@@ -203,9 +203,9 @@ namespace MinecraftClient.Crypto
         {
             if (Program.isUsingMono)
             {
-                return new Streams.MonoAesStream(underlyingStream, AesKey);
+                return new MonoAesStream(underlyingStream, AesKey);
             }
-            else return new Streams.RegularAesStream(underlyingStream, AesKey);
+            return new RegularAesStream(underlyingStream, AesKey);
         }
     }
 }

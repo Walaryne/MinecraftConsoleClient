@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -12,7 +8,7 @@ namespace MinecraftClient.ChatBots
 
     public class ChatLog : ChatBot
     {
-        public enum MessageFilter { AllText, AllMessages, OnlyChat, OnlyWhispers, OnlyInternalCommands };
+        public enum MessageFilter { AllText, AllMessages, OnlyChat, OnlyWhispers, OnlyInternalCommands }
         private bool dateandtime;
         private bool saveOther = true;
         private bool saveChat = true;
@@ -83,8 +79,8 @@ namespace MinecraftClient.ChatBots
         public override void GetText(string text)
         {
             text = GetVerbatim(text);
-            string sender = "";
-            string message = "";
+            var sender = "";
+            var message = "";
 
             if (saveChat && IsChatMessage(text, ref message, ref sender))
             {
@@ -116,8 +112,8 @@ namespace MinecraftClient.ChatBots
             string directory = Path.GetDirectoryName(logfile);
             if (!String.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
-            FileStream stream = new FileStream(logfile, FileMode.OpenOrCreate);
-            StreamWriter writer = new StreamWriter(stream);
+            var stream = new FileStream(logfile, FileMode.OpenOrCreate);
+            var writer = new StreamWriter(stream);
             stream.Seek(0, SeekOrigin.End);
             writer.WriteLine(tosave);
             writer.Dispose();

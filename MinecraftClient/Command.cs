@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient
 {
     /// <summary>
@@ -71,7 +67,7 @@ namespace MinecraftClient
             {
                 return command.Substring(command.IndexOf(' ') + 1);
             }
-            else return "";
+            return "";
         }
 
         /// <summary>
@@ -85,10 +81,7 @@ namespace MinecraftClient
             {
                 return new string[] { };
             }
-            else
-            {
-                return args;
-            }
+            return args;
         }
     }
 }

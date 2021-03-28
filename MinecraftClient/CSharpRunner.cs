@@ -1,14 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using Microsoft.CSharp;
 using System.CodeDom.Compiler;
-using System.Reflection;
-using System.Threading;
+using System.Collections.Generic;
 using System.ComponentModel;
-
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using Microsoft.CSharp;
+using MinecraftClient.ChatBots;
 namespace MinecraftClient
 {
     /// <summary>
@@ -47,11 +47,11 @@ namespace MinecraftClient
                 if (!Settings.CacheScripts || !CompileCache.ContainsKey(scriptHash))
                 {
                     //Process different sections of the script file
-                    bool scriptMain = true;
-                    List<string> script = new List<string>();
-                    List<string> extensions = new List<string>();
-                    List<string> libs = new List<string>();
-                    List<string> dlls = new List<string>();
+                    var scriptMain = true;
+                    var script = new List<string>();
+                    var extensions = new List<string>();
+                    var libs = new List<string>();
+                    var dlls = new List<string>();
                     foreach (string line in lines)
                     {
                         if (line.StartsWith("//using"))
@@ -77,34 +77,11 @@ namespace MinecraftClient
                         script.Add("return null;");
 
                     //Generate a class from the given script
-                    string code = String.Join("\n", new string[]
-                    {
-                        "using System;",
-                        "using System.Collections.Generic;",
-                        "using System.Text.RegularExpressions;",
-                        "using System.Linq;",
-                        "using System.Text;",
-                        "using System.IO;",
-                        "using System.Net;",
-                        "using System.Threading;",
-                        "using MinecraftClient;",
-                        "using MinecraftClient.Mapping;",
-                        "using MinecraftClient.Inventory;",
-                        String.Join("\n", libs),
-                        "namespace ScriptLoader {",
-                        "public class Script {",
-                        "public CSharpAPI MCC;",
-                        "public object __run(CSharpAPI __apiHandler, string[] args) {",
-                            "this.MCC = __apiHandler;",
-                            String.Join("\n", script),
-                        "}",
-                            String.Join("\n", extensions),
-                        "}}",
-                    });
+                    string code = String.Join("\n", "using System;", "using System.Collections.Generic;", "using System.Text.RegularExpressions;", "using System.Linq;", "using System.Text;", "using System.IO;", "using System.Net;", "using System.Threading;", "using MinecraftClient;", "using MinecraftClient.Mapping;", "using MinecraftClient.Inventory;", String.Join("\n", libs), "namespace ScriptLoader {", "public class Script {", "public CSharpAPI MCC;", "public object __run(CSharpAPI __apiHandler, string[] args) {", "this.MCC = __apiHandler;", String.Join("\n", script), "}", String.Join("\n", extensions), "}}");
 
                     //Compile the C# class in memory using all the currently loaded assemblies
-                    CSharpCodeProvider compiler = new CSharpCodeProvider();
-                    CompilerParameters parameters = new CompilerParameters();
+                    var compiler = new CSharpCodeProvider();
+                    var parameters = new CompilerParameters();
                     parameters.ReferencedAssemblies
                         .AddRange(AppDomain.CurrentDomain
                                 .GetAssemblies()
@@ -144,7 +121,7 @@ namespace MinecraftClient
                 }
                 catch (Exception e) { throw new CSharpException(CSErrorType.RuntimeError, e); }
             }
-            else return null;
+            return null;
         }
 
         /// <summary>
@@ -154,10 +131,10 @@ namespace MinecraftClient
         /// <returns>Quick hash as unsigned long</returns>
         private static ulong QuickHash(string[] lines)
         {
-            ulong hashedValue = 3074457345618258791ul;
-            for (int i = 0; i < lines.Length; i++)
+            var hashedValue = 3074457345618258791ul;
+            for (var i = 0; i < lines.Length; i++)
             {
-                for (int j = 0; j < lines[i].Length; j++)
+                for (var j = 0; j < lines[i].Length; j++)
                 {
                     hashedValue += lines[i][j];
                     hashedValue *= 3074457345618258799ul;
@@ -172,7 +149,7 @@ namespace MinecraftClient
     /// <summary>
     /// Describe a C# script error type
     /// </summary>
-    public enum CSErrorType { FileReadError, InvalidScript, LoadError, RuntimeError };
+    public enum CSErrorType { FileReadError, InvalidScript, LoadError, RuntimeError }
 
     /// <summary>
     /// Describe a C# script error with associated error type
@@ -404,7 +381,7 @@ namespace MinecraftClient
         public object CallScript(string script, string[] args)
         {
             string[] lines = null;
-            ChatBots.Script.LookForScript(ref script);
+            Script.LookForScript(ref script);
             try { lines = File.ReadAllLines(script, Encoding.UTF8); }
             catch (Exception e) { throw new CSharpException(CSErrorType.FileReadError, e); }
             return CSharpRunner.Run(this, tickHandler, lines, args, localVars);

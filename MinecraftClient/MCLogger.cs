@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace MinecraftClient
+﻿namespace MinecraftClient
 {
     public class MCLogger : ILogger
     {
-        private bool debugEnabled = false;
+        private bool debugEnabled;
         private bool warnEnabled = true;
         private bool infoEnabled = true;
         private bool errorEnabled = true;

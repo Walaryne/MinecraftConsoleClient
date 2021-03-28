@@ -24,12 +24,11 @@
  */
 
 using System;
-using System.Text;
-using System.Net.Sockets;
-using System.Threading;
-using System.Globalization;
 using System.ComponentModel;
-
+using System.Globalization;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 namespace Starksoft.Net.Proxy
 {
     /// <summary>
@@ -297,16 +296,16 @@ namespace Starksoft.Net.Proxy
             //<CR><LF>    // Last Empty Line
 
             // create an byte response array  
-            byte[] response = new byte[_tcpClient.ReceiveBufferSize];
-            StringBuilder sbuilder = new StringBuilder();
-            int bytes = 0;
+            var response = new byte[_tcpClient.ReceiveBufferSize];
+            var sbuilder = new StringBuilder();
+            var bytes = 0;
             long total = 0;
 
             do
             {
                 bytes = stream.Read(response, 0, _tcpClient.ReceiveBufferSize);
                 total += bytes;
-                sbuilder.Append(System.Text.ASCIIEncoding.UTF8.GetString(response, 0, bytes));
+                sbuilder.Append(ASCIIEncoding.UTF8.GetString(response, 0, bytes));
             } while (stream.DataAvailable);
 
             ParseResponse(sbuilder.ToString());
@@ -374,7 +373,7 @@ namespace Starksoft.Net.Proxy
 
         private void WaitForData(NetworkStream stream)
         {
-            int sleepTime = 0;
+            var sleepTime = 0;
             while (!stream.DataAvailable)
             {
                 Thread.Sleep(WAIT_FOR_DATA_INTERVAL);
@@ -396,8 +395,8 @@ namespace Starksoft.Net.Proxy
 
         private void ParseCodeAndText(string line)
         {
-            int begin = 0;
-            int end = 0;
+            var begin = 0;
+            var end = 0;
             string val = null;
 
             if (line.IndexOf("HTTP") == -1)
@@ -407,7 +406,7 @@ namespace Starksoft.Net.Proxy
             end = line.IndexOf(" ", begin);
 
             val = line.Substring(begin, end - begin);
-            Int32 code = 0;
+            var code = 0;
 
             if (!Int32.TryParse(val, out code))
                 throw new ProxyException(String.Format("An invalid response code was received from proxy destination.  Server response: {0}.", line));
@@ -492,9 +491,9 @@ namespace Starksoft.Net.Proxy
 
             CreateAsyncWorker();
             _asyncWorker.WorkerSupportsCancellation = true;
-            _asyncWorker.DoWork += new DoWorkEventHandler(CreateConnectionAsync_DoWork);
-            _asyncWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(CreateConnectionAsync_RunWorkerCompleted);
-            Object[] args = new Object[2];
+            _asyncWorker.DoWork += CreateConnectionAsync_DoWork;
+            _asyncWorker.RunWorkerCompleted += CreateConnectionAsync_RunWorkerCompleted;
+            var args = new Object[2];
             args[0] = destinationHost;
             args[1] = destinationPort;
             _asyncWorker.RunWorkerAsync(args);
@@ -504,7 +503,7 @@ namespace Starksoft.Net.Proxy
         {
             try
             {
-                Object[] args = (Object[])e.Argument;
+                var args = (Object[])e.Argument;
                 e.Result = CreateConnection((string)args[0], (int)args[1]);
             }
             catch (Exception ex)

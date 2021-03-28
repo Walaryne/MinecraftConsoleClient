@@ -33,9 +33,9 @@
 
 
 using System;
-using System.IO;
 using System.Collections.Generic;
-
+using System.IO;
+using Ionic.Zip;
 namespace Ionic.Zip
 {
 
@@ -246,7 +246,7 @@ namespace Ionic.Zip
         /// <param name="selectionCriteria">The criteria for file selection</param>
         public void AddSelectedFiles(String selectionCriteria)
         {
-            this.AddSelectedFiles(selectionCriteria, ".", null, false);
+            AddSelectedFiles(selectionCriteria, ".", null, false);
         }
 
         /// <summary>
@@ -306,7 +306,7 @@ namespace Ionic.Zip
         /// </param>
         public void AddSelectedFiles(String selectionCriteria, bool recurseDirectories)
         {
-            this.AddSelectedFiles(selectionCriteria, ".", null, recurseDirectories);
+            AddSelectedFiles(selectionCriteria, ".", null, recurseDirectories);
         }
 
         /// <summary>
@@ -364,7 +364,7 @@ namespace Ionic.Zip
         /// </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk)
         {
-            this.AddSelectedFiles(selectionCriteria, directoryOnDisk, null, false);
+            AddSelectedFiles(selectionCriteria, directoryOnDisk, null, false);
         }
 
 
@@ -440,7 +440,7 @@ namespace Ionic.Zip
         /// </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, bool recurseDirectories)
         {
-            this.AddSelectedFiles(selectionCriteria, directoryOnDisk, null, recurseDirectories);
+            AddSelectedFiles(selectionCriteria, directoryOnDisk, null, recurseDirectories);
         }
 
 
@@ -507,7 +507,7 @@ namespace Ionic.Zip
                                      String directoryOnDisk,
                                      String directoryPathInArchive)
         {
-            this.AddSelectedFiles(selectionCriteria, directoryOnDisk, directoryPathInArchive, false);
+            AddSelectedFiles(selectionCriteria, directoryOnDisk, directoryPathInArchive, false);
         }
 
         /// <summary>
@@ -662,8 +662,8 @@ namespace Ionic.Zip
             while (directoryOnDisk.EndsWith("\\")) directoryOnDisk = directoryOnDisk.Substring(0, directoryOnDisk.Length - 1);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...",
                                                                selectionCriteria, directoryOnDisk);
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
-                                                           AddDirectoryWillTraverseReparsePoints);
+            var ff = new FileSelector(selectionCriteria,
+                                      AddDirectoryWillTraverseReparsePoints);
             var itemsToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
 
             if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", itemsToAdd.Count);
@@ -684,9 +684,9 @@ namespace Ionic.Zip
                 if (File.Exists(item))
                 {
                     if (wantUpdate)
-                        this.UpdateFile(item, dirInArchive);
+                        UpdateFile(item, dirInArchive);
                     else
-                        this.AddFile(item, dirInArchive);
+                        AddFile(item, dirInArchive);
                 }
                 else
                 {
@@ -798,8 +798,8 @@ namespace Ionic.Zip
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
         public ICollection<ZipEntry> SelectEntries(String selectionCriteria)
         {
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
-                                                           AddDirectoryWillTraverseReparsePoints);
+            var ff = new FileSelector(selectionCriteria,
+                                      AddDirectoryWillTraverseReparsePoints);
             return ff.SelectEntries(this);
         }
 
@@ -871,8 +871,8 @@ namespace Ionic.Zip
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
         public ICollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
         {
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
-                                                           AddDirectoryWillTraverseReparsePoints);
+            var ff = new FileSelector(selectionCriteria,
+                                      AddDirectoryWillTraverseReparsePoints);
             return ff.SelectEntries(this, directoryPathInArchive);
         }
 
@@ -933,8 +933,8 @@ namespace Ionic.Zip
         /// <returns>the number of entries removed</returns>
         public int RemoveSelectedEntries(String selectionCriteria)
         {
-            var selection = this.SelectEntries(selectionCriteria);
-            this.RemoveEntries(selection);
+            var selection = SelectEntries(selectionCriteria);
+            RemoveEntries(selection);
             return selection.Count;
         }
 
@@ -999,8 +999,8 @@ namespace Ionic.Zip
         /// <returns>the number of entries removed</returns>
         public int RemoveSelectedEntries(String selectionCriteria, string directoryPathInArchive)
         {
-            var selection = this.SelectEntries(selectionCriteria, directoryPathInArchive);
-            this.RemoveEntries(selection);
+            var selection = SelectEntries(selectionCriteria, directoryPathInArchive);
+            RemoveEntries(selection);
             return selection.Count;
         }
 
@@ -1247,13 +1247,13 @@ namespace Ionic
 {
     internal abstract partial class SelectionCriterion
     {
-        internal abstract bool Evaluate(Ionic.Zip.ZipEntry entry);
+        internal abstract bool Evaluate(ZipEntry entry);
     }
 
 
     internal partial class NameCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             // swap forward slashes in the entry.FileName for backslashes
             string transformedFileName = entry.FileName.Replace("/", "\\");
@@ -1265,7 +1265,7 @@ namespace Ionic
 
     internal partial class SizeCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             return _Evaluate(entry.UncompressedSize);
         }
@@ -1273,7 +1273,7 @@ namespace Ionic
 
     internal partial class TimeCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             DateTime x;
             switch (Which)
@@ -1296,7 +1296,7 @@ namespace Ionic
 
     internal partial class TypeCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             bool result = (ObjectType == 'D')
                 ? entry.IsDirectory
@@ -1311,7 +1311,7 @@ namespace Ionic
 #if !SILVERLIGHT
     internal partial class AttributesCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             FileAttributes fileAttrs = entry.Attributes;
             return _Evaluate(fileAttrs);
@@ -1321,7 +1321,7 @@ namespace Ionic
 
     internal partial class CompoundCriterion : SelectionCriterion
     {
-        internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
+        internal override bool Evaluate(ZipEntry entry)
         {
             bool result = Left.Evaluate(entry);
             switch (Conjunction)
@@ -1346,7 +1346,7 @@ namespace Ionic
 
     public partial class FileSelector
     {
-        private bool Evaluate(Ionic.Zip.ZipEntry entry)
+        private bool Evaluate(ZipEntry entry)
         {
             bool result = _Criterion.Evaluate(entry);
             return result;
@@ -1380,16 +1380,16 @@ namespace Ionic
         /// <param name="zip">The ZipFile from which to retrieve entries.</param>
         ///
         /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip)
+        public ICollection<ZipEntry> SelectEntries(ZipFile zip)
         {
             if (zip == null)
                 throw new ArgumentNullException("zip");
 
-            var list = new List<Ionic.Zip.ZipEntry>();
+            var list = new List<ZipEntry>();
 
-            foreach (Ionic.Zip.ZipEntry e in zip)
+            foreach (ZipEntry e in zip)
             {
-                if (this.Evaluate(e))
+                if (Evaluate(e))
                     list.Add(e);
             }
 
@@ -1435,12 +1435,12 @@ namespace Ionic
         /// </param>
         ///
         /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip, string directoryPathInArchive)
+        public ICollection<ZipEntry> SelectEntries(ZipFile zip, string directoryPathInArchive)
         {
             if (zip == null)
                 throw new ArgumentNullException("zip");
 
-            var list = new List<Ionic.Zip.ZipEntry>();
+            var list = new List<ZipEntry>();
             // workitem 8559
             string slashSwapped = (directoryPathInArchive == null) ? null : directoryPathInArchive.Replace("/", "\\");
             // workitem 9174
@@ -1449,11 +1449,11 @@ namespace Ionic
                 while (slashSwapped.EndsWith("\\"))
                     slashSwapped = slashSwapped.Substring(0, slashSwapped.Length - 1);
             }
-            foreach (Ionic.Zip.ZipEntry e in zip)
+            foreach (ZipEntry e in zip)
             {
                 if (directoryPathInArchive == null || (Path.GetDirectoryName(e.FileName) == directoryPathInArchive)
                     || (Path.GetDirectoryName(e.FileName) == slashSwapped)) // workitem 8559
-                    if (this.Evaluate(e))
+                    if (Evaluate(e))
                         list.Add(e);
             }
 

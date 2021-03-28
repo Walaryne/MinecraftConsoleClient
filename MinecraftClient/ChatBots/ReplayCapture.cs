@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MinecraftClient.Protocol;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -80,7 +77,7 @@ namespace MinecraftClient.ChatBots
                     }
                     return Translations.Get("general.available_cmd", "save, stop");
                 }
-                else return Translations.Get("bot.replayCapture.restart");
+                return Translations.Get("bot.replayCapture.restart");
             }
             catch (Exception e)
             {

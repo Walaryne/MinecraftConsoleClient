@@ -25,12 +25,10 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-
 namespace Ionic.Zip
 {
-    internal class ZipSegmentedStream : System.IO.Stream
+    internal class ZipSegmentedStream : Stream
     {
         enum RwMode
         {
@@ -50,7 +48,7 @@ namespace Ionic.Zip
         private uint _currentDiskNumber;
         private uint _maxDiskNumber;
         private int _maxSegmentSize;
-        private System.IO.Stream _innerStream;
+        private Stream _innerStream;
 
         // **Note regarding exceptions:
         //
@@ -63,7 +61,7 @@ namespace Ionic.Zip
         // appropriate. Need to be careful: any additional exceptions
         // will mask the original one.
 
-        private ZipSegmentedStream() : base()
+        private ZipSegmentedStream()
         {
             _exceptionPending = false;
         }
@@ -72,8 +70,8 @@ namespace Ionic.Zip
                                                     uint initialDiskNumber,
                                                     uint maxDiskNumber)
         {
-            ZipSegmentedStream zss = new ZipSegmentedStream()
-                {
+            var zss = new ZipSegmentedStream
+            {
                     rwMode = RwMode.ReadOnly,
                     CurrentSegment = initialDiskNumber,
                     _maxDiskNumber = maxDiskNumber,
@@ -91,8 +89,8 @@ namespace Ionic.Zip
 
         public static ZipSegmentedStream ForWriting(string name, int maxSegmentSize)
         {
-            ZipSegmentedStream zss = new ZipSegmentedStream()
-                {
+            var zss = new ZipSegmentedStream
+            {
                     rwMode = RwMode.Write,
                     CurrentSegment = 0,
                     _baseName = name,
@@ -241,7 +239,7 @@ namespace Ionic.Zip
             return String.Format("{0}[{1}][{2}], pos=0x{3:X})",
                                  "ZipSegmentedStream", CurrentName,
                                  rwMode.ToString(),
-                                 this.Position);
+                                 Position);
         }
 
 
@@ -396,7 +394,7 @@ namespace Ionic.Zip
             {
                 var x =_innerStream.Seek(offset, SeekOrigin.Begin);
                 // workitem 10178
-                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+                SharedUtilities.Workaround_Ladybug318918(_innerStream);
                 return x;
             }
 
@@ -427,7 +425,7 @@ namespace Ionic.Zip
             CurrentSegment = diskNumber;
 
             // get a new temp file, try 3 times:
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 try
                 {
@@ -448,7 +446,7 @@ namespace Ionic.Zip
             var r =  _innerStream.Seek(offset, SeekOrigin.Begin);
 
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+            SharedUtilities.Workaround_Ladybug318918(_innerStream);
 
             return r;
         }
@@ -505,11 +503,11 @@ namespace Ionic.Zip
             set { _innerStream.Position = value; }
         }
 
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             var x = _innerStream.Seek(offset, origin);
             // workitem 10178
-            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+            SharedUtilities.Workaround_Ladybug318918(_innerStream);
             return x;
         }
 
@@ -548,14 +546,6 @@ namespace Ionic.Zip
                         {
                             // possibly could try to clean up all the
                             // temp files created so far...
-                        }
-                        else
-                        {
-                            // // move the final temp file to the .zNN name
-                            // if (File.Exists(CurrentName))
-                            //     File.Delete(CurrentName);
-                            // if (File.Exists(_currentTempName))
-                            //     File.Move(_currentTempName, CurrentName);
                         }
                     }
                 }

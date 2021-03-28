@@ -1,9 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-
-using Org.BouncyCastle.Crypto;
-
 namespace Org.BouncyCastle.Crypto.IO
 {
     public class CipherStream
@@ -24,13 +21,13 @@ namespace Org.BouncyCastle.Crypto.IO
 
 			if (readCipher != null)
 			{
-				this.inCipher = readCipher;
+				inCipher = readCipher;
 				mInBuf = null;
 			}
 
 			if (writeCipher != null)
 			{
-				this.outCipher = writeCipher;
+				outCipher = writeCipher;
 			}
 		}
 
@@ -66,7 +63,7 @@ namespace Org.BouncyCastle.Crypto.IO
             if (inCipher == null)
                 return stream.Read(buffer, offset, count);
 
-			int num = 0;
+			var num = 0;
 			while (num < count)
 			{
 				if (mInBuf == null || mInPos >= mInBuf.Length)
@@ -75,7 +72,7 @@ namespace Org.BouncyCastle.Crypto.IO
 						break;
 				}
 
-				int numToCopy = System.Math.Min(count - num, mInBuf.Length - mInPos);
+				int numToCopy = Math.Min(count - num, mInBuf.Length - mInPos);
 				Array.Copy(mInBuf, mInPos, buffer, offset + num, numToCopy);
 				mInPos += numToCopy;
 				num += numToCopy;
@@ -105,8 +102,8 @@ namespace Org.BouncyCastle.Crypto.IO
 			int blockSize = inCipher.GetBlockSize();
 			int readSize = (blockSize == 0) ? 256 : blockSize;
 
-			byte[] block = new byte[readSize];
-			int numRead = 0;
+			var block = new byte[readSize];
+			var numRead = 0;
 			do
 			{
 				int count = stream.Read(block, numRead, block.Length - numRead);

@@ -1,23 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using MinecraftClient.Crypto;
-using MinecraftClient.Proxy;
-using System.Security.Cryptography;
+using MinecraftClient.Inventory;
+using MinecraftClient.Inventory.ItemPalettes;
 using MinecraftClient.Mapping;
 using MinecraftClient.Mapping.BlockPalettes;
 using MinecraftClient.Mapping.EntityPalettes;
 using MinecraftClient.Protocol.Handlers.Forge;
-using MinecraftClient.Inventory;
-using System.Windows.Forms;
-using System.Data.SqlClient;
-using System.Diagnostics;
-using MinecraftClient.Inventory.ItemPalettes;
 using MinecraftClient.Protocol.Handlers.PacketPalettes;
-
+using MinecraftClient.Proxy;
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -49,9 +46,9 @@ namespace MinecraftClient.Protocol.Handlers
         internal const int MC1163Version = 753;
         internal const int MC1165Version = 754;
 
-        private int compression_treshold = 0;
-        private bool autocomplete_received = false;
-        private int autocomplete_transaction_id = 0;
+        private int compression_treshold;
+        private bool autocomplete_received;
+        private int autocomplete_transaction_id;
         private readonly List<string> autocomplete_result = new List<string>();
         private readonly Dictionary<int, short> window_actions = new Dictionary<int, short>();
         private bool login_phase = true;
@@ -73,14 +70,14 @@ namespace MinecraftClient.Protocol.Handlers
         {
             ConsoleIO.SetAutoCompleteEngine(this);
             ChatParser.InitTranslations();
-            this.socketWrapper = new SocketWrapper(Client);
-            this.dataTypes = new DataTypes(protocolVersion);
-            this.protocolversion = protocolVersion;
+            socketWrapper = new SocketWrapper(Client);
+            dataTypes = new DataTypes(protocolVersion);
+            protocolversion = protocolVersion;
             this.handler = handler;
-            this.pForge = new Protocol18Forge(forgeInfo, protocolVersion, dataTypes, this, handler);
-            this.pTerrain = new Protocol18Terrain(protocolVersion, dataTypes, handler);
-            this.packetPalette = new PacketTypeHandler(protocolVersion, forgeInfo != null).GetTypeHandler();
-            this.log = handler.GetLogger();
+            pForge = new Protocol18Forge(forgeInfo, protocolVersion, dataTypes, this, handler);
+            pTerrain = new Protocol18Terrain(protocolVersion, dataTypes, handler);
+            packetPalette = new PacketTypeHandler(protocolVersion, forgeInfo != null).GetTypeHandler();
+            log = handler.GetLogger();
 
             if (handler.GetTerrainEnabled() && protocolversion > MC1165Version)
             {
@@ -157,7 +154,7 @@ namespace MinecraftClient.Protocol.Handlers
                 }
                 while (Update());
             }
-            catch (System.IO.IOException) { }
+            catch (IOException) { }
             catch (SocketException) { }
             catch (ObjectDisposedException) { }
 
@@ -177,13 +174,13 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 while (socketWrapper.HasDataAvailable())
                 {
-                    int packetID = 0;
-                    Queue<byte> packetData = new Queue<byte>();
+                    var packetID = 0;
+                    var packetData = new Queue<byte>();
                     ReadNextPacket(ref packetID, packetData);
                     HandlePacket(packetID, new Queue<byte>(packetData));
                 }
             }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (SocketException) { return false; }
             catch (NullReferenceException) { return false; }
             return true;
@@ -199,7 +196,7 @@ namespace MinecraftClient.Protocol.Handlers
             packetData.Clear();
             int size = dataTypes.ReadNextVarIntRAW(socketWrapper); //Packet size
             byte[] rawpacket = socketWrapper.ReadDataRAW(size); //Packet contents
-            for (int i = 0; i < rawpacket.Length; i++)
+            for (var i = 0; i < rawpacket.Length; i++)
                 packetData.Enqueue(rawpacket[i]);
 
             //Handle packet decompression
@@ -212,7 +209,7 @@ namespace MinecraftClient.Protocol.Handlers
                     byte[] toDecompress = packetData.ToArray();
                     byte[] uncompressed = ZlibUtils.Decompress(toDecompress, sizeUncompressed);
                     packetData.Clear();
-                    for (int i = 0; i < uncompressed.Length; i++)
+                    for (var i = 0; i < uncompressed.Length; i++)
                         packetData.Enqueue(uncompressed[i]);
                 }
             }
@@ -221,7 +218,7 @@ namespace MinecraftClient.Protocol.Handlers
 
             if (handler.GetNetworkPacketCaptureEnabled())
             {
-                List<byte> clone = packetData.ToList();
+                var clone = packetData.ToList();
                 handler.OnNetworkPacket(packetID, clone, login_phase, true);
             }
         }
@@ -247,7 +244,7 @@ namespace MinecraftClient.Protocol.Handlers
                         case 0x04:
                             int messageId = dataTypes.ReadNextVarInt(packetData);
                             string channel = dataTypes.ReadNextString(packetData);
-                            List<byte> responseData = new List<byte>();
+                            var responseData = new List<byte>();
                             bool understood = pForge.HandleLoginPluginRequest(channel, packetData, ref responseData);
                             SendLoginPluginResponse(messageId, understood, responseData.ToArray());
                             return understood;
@@ -276,7 +273,7 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             dataTypes.ReadNextByte(packetData);                       // Previous Gamemode - 1.16 and above
                             int worldCount = dataTypes.ReadNextVarInt(packetData);    // World Count - 1.16 and above
-                            for (int i = 0; i < worldCount; i++)
+                            for (var i = 0; i < worldCount; i++)
                                 dataTypes.ReadNextString(packetData);                 // World Names - 1.16 and above
                             dataTypes.ReadNextNbt(packetData);                        // Dimension Codec - 1.16 and above
                         }
@@ -289,12 +286,12 @@ namespace MinecraftClient.Protocol.Handlers
                             else
                                 dataTypes.ReadNextString(packetData);
                             // TODO handle dimensions for 1.16+, needed for terrain handling
-                            this.currentDimension = 0;
+                            currentDimension = 0;
                         }
                         else if (protocolversion >= MC191Version)
-                            this.currentDimension = dataTypes.ReadNextInt(packetData);
+                            currentDimension = dataTypes.ReadNextInt(packetData);
                         else
-                            this.currentDimension = (sbyte)dataTypes.ReadNextByte(packetData);
+                            currentDimension = (sbyte)dataTypes.ReadNextByte(packetData);
 
                         if (protocolversion < MC114Version)
                             dataTypes.ReadNextByte(packetData);           // Difficulty - 1.13 and below
@@ -340,12 +337,12 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             // TODO handle dimensions for 1.16+, needed for terrain handling
                             dataTypes.ReadNextString(packetData);
-                            this.currentDimension = 0;
+                            currentDimension = 0;
                         }
                         else
                         {
                             // 1.15 and below
-                            this.currentDimension = dataTypes.ReadNextInt(packetData);
+                            currentDimension = dataTypes.ReadNextInt(packetData);
                         }
                         if (protocolversion >= MC116Version)
                             dataTypes.ReadNextString(packetData);         // World Name - 1.16 and above
@@ -419,7 +416,7 @@ namespace MinecraftClient.Protocol.Handlers
                             {
                                 if (protocolversion >= MC114Version)
                                     dataTypes.ReadNextNbt(packetData);  // Heightmaps - 1.14 and above
-                                int biomesLength = 0;
+                                var biomesLength = 0;
                                 if (protocolversion >= MC1162Version)
                                     if (chunksContinuous)
                                         biomesLength = dataTypes.ReadNextVarInt(packetData); // Biomes length - 1.16.2 and above
@@ -427,7 +424,7 @@ namespace MinecraftClient.Protocol.Handlers
                                 {
                                     if (protocolversion >= MC1162Version)
                                     {
-                                        for (int i = 0; i < biomesLength; i++)
+                                        for (var i = 0; i < biomesLength; i++)
                                         {
                                             // Biomes - 1.16.2 and above
                                             // Don't use ReadNextVarInt because it cost too much time
@@ -445,7 +442,7 @@ namespace MinecraftClient.Protocol.Handlers
                         int mapid = dataTypes.ReadNextVarInt(packetData);
                         byte scale = dataTypes.ReadNextByte(packetData);
                         bool trackingposition = dataTypes.ReadNextBool(packetData);
-                        bool locked = false;
+                        var locked = false;
                         if (protocolversion >= MC114Version)
                         {
                             locked = dataTypes.ReadNextBool(packetData);
@@ -459,13 +456,13 @@ namespace MinecraftClient.Protocol.Handlers
                             // MC 1.14 or greater
                             int windowID = dataTypes.ReadNextVarInt(packetData);
                             int size = dataTypes.ReadNextByte(packetData);
-                            List<VillagerTrade> trades = new List<VillagerTrade>();
-                            for (int tradeId = 0; tradeId < size; tradeId++)
+                            var trades = new List<VillagerTrade>();
+                            for (var tradeId = 0; tradeId < size; tradeId++)
                             {
                                 VillagerTrade trade = dataTypes.ReadNextTrade(packetData, itemPalette);
                                     trades.Add(trade);
                             }
-                            VillagerInfo villagerInfo = new VillagerInfo()
+                            var villagerInfo = new VillagerInfo
                             {
                                 Level = dataTypes.ReadNextVarInt(packetData),
                                 Experience = dataTypes.ReadNextVarInt(packetData),
@@ -479,10 +476,10 @@ namespace MinecraftClient.Protocol.Handlers
                         if (protocolversion >= MC18Version)
                         {
                             int action2 = dataTypes.ReadNextVarInt(packetData);
-                            string titletext = String.Empty;
-                            string subtitletext = String.Empty;
-                            string actionbartext = String.Empty;
-                            string json = String.Empty;
+                            var titletext = String.Empty;
+                            var subtitletext = String.Empty;
+                            var actionbartext = String.Empty;
+                            var json = String.Empty;
                             int fadein = -1;
                             int stay = -1;
                             int fadeout = -1;
@@ -538,20 +535,20 @@ namespace MinecraftClient.Protocol.Handlers
                             if (protocolversion >= MC1162Version)
                             {
                                 long chunkSection = dataTypes.ReadNextLong(packetData);
-                                int sectionX = (int)(chunkSection >> 42);
-                                int sectionY = (int)((chunkSection << 44) >> 44);
-                                int sectionZ = (int)((chunkSection << 22) >> 42);
+                                var sectionX = (int)(chunkSection >> 42);
+                                var sectionY = (int)((chunkSection << 44) >> 44);
+                                var sectionZ = (int)((chunkSection << 22) >> 42);
                                 dataTypes.ReadNextBool(packetData); // Useless boolean
                                 int blocksSize = dataTypes.ReadNextVarInt(packetData);
-                                for (int i = 0; i < blocksSize; i++)
+                                for (var i = 0; i < blocksSize; i++)
                                 {
-                                    ulong block = (ulong)dataTypes.ReadNextVarLong(packetData);
-                                    int blockId = (int)(block >> 12);
-                                    int localX = (int)((block >> 8) & 0x0F);
-                                    int localZ = (int)((block >> 4) & 0x0F);
-                                    int localY = (int)(block & 0x0F);
+                                    var block = (ulong)dataTypes.ReadNextVarLong(packetData);
+                                    var blockId = (int)(block >> 12);
+                                    var localX = (int)((block >> 8) & 0x0F);
+                                    var localZ = (int)((block >> 4) & 0x0F);
+                                    var localY = (int)(block & 0x0F);
 
-                                    Block b = new Block((ushort)blockId);
+                                    var b = new Block((ushort)blockId);
                                     int blockX = (sectionX * 16) + localX;
                                     int blockY = (sectionY * 16) + localY;
                                     int blockZ = (sectionZ * 16) + localZ;
@@ -564,10 +561,10 @@ namespace MinecraftClient.Protocol.Handlers
                                 int chunkX = dataTypes.ReadNextInt(packetData);
                                 int chunkZ = dataTypes.ReadNextInt(packetData);
                                 int recordCount = protocolversion < MC18Version
-                                    ? (int)dataTypes.ReadNextShort(packetData)
+                                    ? dataTypes.ReadNextShort(packetData)
                                     : dataTypes.ReadNextVarInt(packetData);
 
-                                for (int i = 0; i < recordCount; i++)
+                                for (var i = 0; i < recordCount; i++)
                                 {
                                     byte locationXZ;
                                     ushort blockIdMeta;
@@ -576,19 +573,19 @@ namespace MinecraftClient.Protocol.Handlers
                                     if (protocolversion < MC18Version)
                                     {
                                         blockIdMeta = dataTypes.ReadNextUShort(packetData);
-                                        blockY = (ushort)dataTypes.ReadNextByte(packetData);
+                                        blockY = dataTypes.ReadNextByte(packetData);
                                         locationXZ = dataTypes.ReadNextByte(packetData);
                                     }
                                     else
                                     {
                                         locationXZ = dataTypes.ReadNextByte(packetData);
-                                        blockY = (ushort)dataTypes.ReadNextByte(packetData);
+                                        blockY = dataTypes.ReadNextByte(packetData);
                                         blockIdMeta = (ushort)dataTypes.ReadNextVarInt(packetData);
                                     }
 
                                     int blockX = locationXZ >> 4;
                                     int blockZ = locationXZ & 0x0F;
-                                    Block block = new Block(blockIdMeta);
+                                    var block = new Block(blockIdMeta);
                                     handler.GetWorld().SetBlock(new Location(chunkX, chunkZ, blockX, blockY, blockZ), block);
                                 }
                             }
@@ -602,7 +599,7 @@ namespace MinecraftClient.Protocol.Handlers
                                 int blockX = dataTypes.ReadNextInt(packetData);
                                 int blockY = dataTypes.ReadNextByte(packetData);
                                 int blockZ = dataTypes.ReadNextInt(packetData);
-                                short blockId = (short)dataTypes.ReadNextVarInt(packetData);
+                                var blockId = (short)dataTypes.ReadNextVarInt(packetData);
                                 byte blockMeta = dataTypes.ReadNextByte(packetData);
                                 handler.GetWorld().SetBlock(new Location(blockX, blockY, blockZ), new Block(blockId, blockMeta));
                             }
@@ -614,7 +611,7 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             int chunkCount;
                             bool hasSkyLight;
-                            Queue<byte> chunkData = packetData;
+                            var chunkData = packetData;
 
                             //Read global fields
                             if (protocolversion < MC18Version)
@@ -633,11 +630,11 @@ namespace MinecraftClient.Protocol.Handlers
                             }
 
                             //Read chunk records
-                            int[] chunkXs = new int[chunkCount];
-                            int[] chunkZs = new int[chunkCount];
-                            ushort[] chunkMasks = new ushort[chunkCount];
-                            ushort[] addBitmaps = new ushort[chunkCount];
-                            for (int chunkColumnNo = 0; chunkColumnNo < chunkCount; chunkColumnNo++)
+                            var chunkXs = new int[chunkCount];
+                            var chunkZs = new int[chunkCount];
+                            var chunkMasks = new ushort[chunkCount];
+                            var addBitmaps = new ushort[chunkCount];
+                            for (var chunkColumnNo = 0; chunkColumnNo < chunkCount; chunkColumnNo++)
                             {
                                 chunkXs[chunkColumnNo] = dataTypes.ReadNextInt(packetData);
                                 chunkZs[chunkColumnNo] = dataTypes.ReadNextInt(packetData);
@@ -648,7 +645,7 @@ namespace MinecraftClient.Protocol.Handlers
                             }
 
                             //Process chunk records
-                            for (int chunkColumnNo = 0; chunkColumnNo < chunkCount; chunkColumnNo++)
+                            for (var chunkColumnNo = 0; chunkColumnNo < chunkCount; chunkColumnNo++)
                                 pTerrain.ProcessChunkColumnData(chunkXs[chunkColumnNo], chunkZs[chunkColumnNo], chunkMasks[chunkColumnNo], addBitmaps[chunkColumnNo], hasSkyLight, true, currentDimension, chunkData);
                         }
                         break;
@@ -665,7 +662,7 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             int action = dataTypes.ReadNextVarInt(packetData);
                             int numActions = dataTypes.ReadNextVarInt(packetData);
-                            for (int i = 0; i < numActions; i++)
+                            for (var i = 0; i < numActions; i++)
                             {
                                 Guid uuid = dataTypes.ReadNextUUID(packetData);
                                 switch (action)
@@ -673,7 +670,7 @@ namespace MinecraftClient.Protocol.Handlers
                                     case 0x00: //Player Join
                                         string name = dataTypes.ReadNextString(packetData);
                                         int propNum = dataTypes.ReadNextVarInt(packetData);
-                                        for (int p = 0; p < propNum; p++)
+                                        for (var p = 0; p < propNum; p++)
                                         {
                                             string key = dataTypes.ReadNextString(packetData);
                                             string val = dataTypes.ReadNextString(packetData);
@@ -700,9 +697,6 @@ namespace MinecraftClient.Protocol.Handlers
                                     case 0x04: //Player Leave
                                         handler.OnPlayerLeave(uuid);
                                         break;
-                                    default:
-                                        //Unknown player list item type
-                                        break;
                                 }
                             }
                         }
@@ -711,7 +705,7 @@ namespace MinecraftClient.Protocol.Handlers
                             string name = dataTypes.ReadNextString(packetData);
                             bool online = dataTypes.ReadNextBool(packetData);
                             short ping = dataTypes.ReadNextShort(packetData);
-                            Guid FakeUUID = new Guid(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(name)).Take(16).ToArray());
+                            var FakeUUID = new Guid(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(name)).Take(16).ToArray());
                             if (online)
                                 handler.OnPlayerJoin(FakeUUID, name);
                             else handler.OnPlayerLeave(FakeUUID);
@@ -728,7 +722,7 @@ namespace MinecraftClient.Protocol.Handlers
                         int autocomplete_count = dataTypes.ReadNextVarInt(packetData);
                         autocomplete_result.Clear();
 
-                        for (int i = 0; i < autocomplete_count; i++)
+                        for (var i = 0; i < autocomplete_count; i++)
                         {
                             autocomplete_result.Add(dataTypes.ReadNextString(packetData));
                             if (protocolversion >= MC113Version)
@@ -763,10 +757,10 @@ namespace MinecraftClient.Protocol.Handlers
                                 // MC 1.13 or lower
                                 byte windowID = dataTypes.ReadNextByte(packetData);
                                 string type = dataTypes.ReadNextString(packetData).Replace("minecraft:", "").ToUpper();
-                                ContainerTypeOld inventoryType = (ContainerTypeOld)Enum.Parse(typeof(ContainerTypeOld), type);
+                                var inventoryType = (ContainerTypeOld)Enum.Parse(typeof(ContainerTypeOld), type);
                                 string title = dataTypes.ReadNextString(packetData);
                                 byte slots = dataTypes.ReadNextByte(packetData);
-                                Container inventory = new Container(windowID, inventoryType, ChatParser.ParseText(title));
+                                var inventory = new Container(windowID, inventoryType, ChatParser.ParseText(title));
                                 handler.OnInventoryOpen(windowID, inventory);
                             }
                             else
@@ -775,7 +769,7 @@ namespace MinecraftClient.Protocol.Handlers
                                 int windowID = dataTypes.ReadNextVarInt(packetData);
                                 int windowType = dataTypes.ReadNextVarInt(packetData);
                                 string title = dataTypes.ReadNextString(packetData);
-                                Container inventory = new Container(windowID, windowType, ChatParser.ParseText(title));
+                                var inventory = new Container(windowID, windowType, ChatParser.ParseText(title));
                                 handler.OnInventoryOpen(windowID, inventory);
                             }
                         }
@@ -793,7 +787,7 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             byte windowId = dataTypes.ReadNextByte(packetData);
                             short elements = dataTypes.ReadNextShort(packetData);
-                            Dictionary<int, Item> inventorySlots = new Dictionary<int, Item>();
+                            var inventorySlots = new Dictionary<int, Item>();
                             for (short slotId = 0; slotId < elements; slotId++)
                             {
                                 Item item = dataTypes.ReadNextItemSlot(packetData, itemPalette);
@@ -831,7 +825,7 @@ namespace MinecraftClient.Protocol.Handlers
                         if (hash.Length != 40)
                             break;
                         //Send back "accepted" and "successfully loaded" responses for plugins making use of resource pack mandatory
-                        byte[] responseHeader = new byte[0];
+                        var responseHeader = new byte[0];
                         if (protocolversion < MC110Version) //MC 1.10 does not include resource pack hash in responses
                             responseHeader = dataTypes.ConcatBytes(dataTypes.GetVarInt(hash.Length), Encoding.UTF8.GetBytes(hash));
                         SendPacket(PacketTypesOut.ResourcePackStatus, dataTypes.ConcatBytes(responseHeader, dataTypes.GetVarInt(3))); //Accepted pack
@@ -890,7 +884,7 @@ namespace MinecraftClient.Protocol.Handlers
                             byte Yaw = dataTypes.ReadNextByte(packetData);
                             byte Pitch = dataTypes.ReadNextByte(packetData);
 
-                            Location EntityLocation = new Location(X, Y, Z);
+                            var EntityLocation = new Location(X, Y, Z);
 
                             handler.OnSpawnPlayer(EntityID, UUID, EntityLocation, Yaw, Pitch);
                         }
@@ -899,7 +893,7 @@ namespace MinecraftClient.Protocol.Handlers
                         if (handler.GetEntityHandlingEnabled())
                         {
                             int entityid = dataTypes.ReadNextVarInt(packetData);
-                            Inventory.Effects effect = Effects.Speed;
+                            var effect = Effects.Speed;
                             if (Enum.TryParse(dataTypes.ReadNextByte(packetData).ToString(), out effect))
                             {
                                 int amplifier = dataTypes.ReadNextByte(packetData);
@@ -913,8 +907,8 @@ namespace MinecraftClient.Protocol.Handlers
                         if (handler.GetEntityHandlingEnabled())
                         {
                             int EntityCount = dataTypes.ReadNextVarInt(packetData);
-                            int[] EntitiesList = new int[EntityCount];
-                            for (int i = 0; i < EntityCount; i++)
+                            var EntitiesList = new int[EntityCount];
+                            for (var i = 0; i < EntityCount; i++)
                             {
                                 EntitiesList[i] = dataTypes.ReadNextVarInt(packetData);
                             }
@@ -925,9 +919,9 @@ namespace MinecraftClient.Protocol.Handlers
                         if (handler.GetEntityHandlingEnabled())
                         {
                             int EntityID = dataTypes.ReadNextVarInt(packetData);
-                            Double DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                            Double DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                            Double DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
                             bool OnGround = dataTypes.ReadNextBool(packetData);
                             DeltaX = DeltaX / (128 * 32);
                             DeltaY = DeltaY / (128 * 32);
@@ -939,9 +933,9 @@ namespace MinecraftClient.Protocol.Handlers
                         if (handler.GetEntityHandlingEnabled())
                         {
                             int EntityID = dataTypes.ReadNextVarInt(packetData);
-                            Double DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                            Double DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
-                            Double DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaX = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaY = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
+                            var DeltaZ = Convert.ToDouble(dataTypes.ReadNextShort(packetData));
                             byte _yaw = dataTypes.ReadNextByte(packetData);
                             byte _pitch = dataTypes.ReadNextByte(packetData);
                             bool OnGround = dataTypes.ReadNextBool(packetData);
@@ -956,17 +950,17 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             int EntityID = dataTypes.ReadNextVarInt(packetData);
                             int NumberOfProperties = dataTypes.ReadNextInt(packetData);
-                            Dictionary<string, Double> keys = new Dictionary<string, Double>();
-                            for (int i = 0; i < NumberOfProperties; i++)
+                            var keys = new Dictionary<string, Double>();
+                            for (var i = 0; i < NumberOfProperties; i++)
                             {
                                 string _key = dataTypes.ReadNextString(packetData);
                                 Double _value = dataTypes.ReadNextDouble(packetData);
 
-                                List<double> op0 = new List<double>();
-                                List<double> op1 = new List<double>();
-                                List<double> op2 = new List<double>();
+                                var op0 = new List<double>();
+                                var op1 = new List<double>();
+                                var op2 = new List<double>();
                                 int NumberOfModifiers = dataTypes.ReadNextVarInt(packetData);
-                                for (int j = 0; j < NumberOfModifiers; j++)
+                                for (var j = 0; j < NumberOfModifiers; j++)
                                 {
                                     dataTypes.ReadNextUUID(packetData);
                                     Double amount = dataTypes.ReadNextDouble(packetData);
@@ -990,7 +984,7 @@ namespace MinecraftClient.Protocol.Handlers
                         if (handler.GetEntityHandlingEnabled())
                         {
                             int EntityID = dataTypes.ReadNextVarInt(packetData);
-                            Dictionary<int, object> metadata = dataTypes.ReadNextMetadata(packetData, itemPalette);
+                            var metadata = dataTypes.ReadNextMetadata(packetData, itemPalette);
                             int healthField = protocolversion >= MC114Version ? 8 : 7; // Health is field no. 7 in 1.10+ and 8 in 1.14+
                             if (metadata.ContainsKey(healthField) && metadata[healthField] != null && metadata[healthField].GetType() == typeof(float))
                                 handler.OnEntityHealth(EntityID, (float)metadata[healthField]);
@@ -1032,7 +1026,7 @@ namespace MinecraftClient.Protocol.Handlers
                         handler.OnSetExperience(experiencebar, level, totalexperience);
                         break;
                     case PacketTypesIn.Explosion:
-                        Location explosionLocation = new Location(dataTypes.ReadNextFloat(packetData), dataTypes.ReadNextFloat(packetData), dataTypes.ReadNextFloat(packetData));
+                        var explosionLocation = new Location(dataTypes.ReadNextFloat(packetData), dataTypes.ReadNextFloat(packetData), dataTypes.ReadNextFloat(packetData));
                         float explosionStrength = dataTypes.ReadNextFloat(packetData);
                         int explosionBlockCount = dataTypes.ReadNextInt(packetData);
                         // Ignoring additional fields (records, pushback)
@@ -1045,7 +1039,7 @@ namespace MinecraftClient.Protocol.Handlers
                     case PacketTypesIn.ScoreboardObjective:
                         string objectivename = dataTypes.ReadNextString(packetData);
                         byte mode = dataTypes.ReadNextByte(packetData);
-                        string objectivevalue = String.Empty;
+                        var objectivevalue = String.Empty;
                         int type2 = -1;
                         if (mode == 0 || mode == 2)
                         {
@@ -1074,7 +1068,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 if (innerException is ThreadAbortException || innerException is SocketException || innerException.InnerException is SocketException)
                     throw; //Thread abort or Connection lost rather than invalid data
-                throw new System.IO.InvalidDataException(
+                throw new InvalidDataException(
                     Translations.Get("exception.packet_process",
                         packetPalette.GetIncommingTypeById(packetID),
                         packetID,
@@ -1090,7 +1084,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// </summary>
         private void StartUpdating()
         {
-            netRead = new Thread(new ThreadStart(Updater));
+            netRead = new Thread(Updater);
             netRead.Name = "ProtocolPacketHandler";
             netRead.Start();
         }
@@ -1130,7 +1124,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             if (handler.GetNetworkPacketCaptureEnabled())
             {
-                List<byte> clone = packetData.ToList();
+                var clone = packetData.ToList();
                 handler.OnNetworkPacket(packetID, clone, login_phase, false);
             }
             
@@ -1173,7 +1167,7 @@ namespace MinecraftClient.Protocol.Handlers
             SendPacket(0x00, login_packet);
 
             int packetID = -1;
-            Queue<byte> packetData = new Queue<byte>();
+            var packetData = new Queue<byte>();
             while (true)
             {
                 ReadNextPacket(ref packetID, packetData);
@@ -1182,14 +1176,14 @@ namespace MinecraftClient.Protocol.Handlers
                     handler.OnConnectionLost(ChatBot.DisconnectReason.LoginRejected, ChatParser.ParseText(dataTypes.ReadNextString(packetData)));
                     return false;
                 }
-                else if (packetID == 0x01) //Encryption request
+                if (packetID == 0x01) //Encryption request
                 {
                     string serverID = dataTypes.ReadNextString(packetData);
                     byte[] Serverkey = dataTypes.ReadNextByteArray(packetData);
                     byte[] token = dataTypes.ReadNextByteArray(packetData);
                     return StartEncryption(handler.GetUserUUID(), handler.GetSessionID(), token, serverID, Serverkey);
                 }
-                else if (packetID == 0x02) //Login successful
+                if (packetID == 0x02) //Login successful
                 {
                     log.Info(Translations.Get("mcc.server_offline"));
                     login_phase = false;
@@ -1203,7 +1197,7 @@ namespace MinecraftClient.Protocol.Handlers
                     StartUpdating();
                     return true; //No need to check session or start encryption
                 }
-                else HandlePacket(packetID, packetData);
+                HandlePacket(packetID, packetData);
             }
         }
 
@@ -1213,7 +1207,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>True if encryption was successful</returns>
         private bool StartEncryption(string uuid, string sessionID, byte[] token, string serverIDhash, byte[] serverKey)
         {
-            System.Security.Cryptography.RSACryptoServiceProvider RSAService = CryptoHandler.DecodeRSAPublicKey(serverKey);
+            RSACryptoServiceProvider RSAService = CryptoHandler.DecodeRSAPublicKey(serverKey);
             byte[] secretKey = CryptoHandler.GenerateAESPrivateKey();
 
             log.Debug(Translations.Get("debug.crypto"));
@@ -1240,7 +1234,7 @@ namespace MinecraftClient.Protocol.Handlers
 
             //Process the next packet
             int packetID = -1;
-            Queue<byte> packetData = new Queue<byte>();
+            var packetData = new Queue<byte>();
             while (true)
             {
                 ReadNextPacket(ref packetID, packetData);
@@ -1249,7 +1243,7 @@ namespace MinecraftClient.Protocol.Handlers
                     handler.OnConnectionLost(ChatBot.DisconnectReason.LoginRejected, ChatParser.ParseText(dataTypes.ReadNextString(packetData)));
                     return false;
                 }
-                else if (packetID == 0x02) //Login successful
+                if (packetID == 0x02) //Login successful
                 {
                     login_phase = false;
 
@@ -1262,7 +1256,7 @@ namespace MinecraftClient.Protocol.Handlers
                     StartUpdating();
                     return true;
                 }
-                else HandlePacket(packetID, packetData);
+                HandlePacket(packetID, packetData);
             }
         }
 
@@ -1286,10 +1280,10 @@ namespace MinecraftClient.Protocol.Handlers
                 return new string[] { };
 
             byte[] transaction_id = dataTypes.GetVarInt(autocomplete_transaction_id);
-            byte[] assume_command = new byte[] { 0x00 };
-            byte[] has_position = new byte[] { 0x00 };
+            byte[] assume_command = { 0x00 };
+            byte[] has_position = { 0x00 };
 
-            byte[] tabcomplete_packet = new byte[] { };
+            byte[] tabcomplete_packet = { };
 
             if (protocolversion >= MC18Version)
             {
@@ -1320,10 +1314,10 @@ namespace MinecraftClient.Protocol.Handlers
             autocomplete_result.Add(BehindCursor);
             SendPacket(PacketTypesOut.TabComplete, tabcomplete_packet);
 
-            int wait_left = 50; //do not wait more than 5 seconds (50 * 100 ms)
-            Thread t1 = new Thread(new ThreadStart(delegate
+            var wait_left = 50; //do not wait more than 5 seconds (50 * 100 ms)
+            var t1 = new Thread(new ThreadStart(delegate
             {
-                while (wait_left > 0 && !autocomplete_received) { System.Threading.Thread.Sleep(100); wait_left--; }
+                while (wait_left > 0 && !autocomplete_received) { Thread.Sleep(100); wait_left--; }
                 if (autocomplete_result.Count > 0)
                     ConsoleIO.WriteLineFormatted("§8" + String.Join(" ", autocomplete_result), false);
             }));
@@ -1337,12 +1331,12 @@ namespace MinecraftClient.Protocol.Handlers
         /// <returns>True if ping was successful</returns>
         public static bool doPing(string host, int port, ref int protocolversion, ref ForgeInfo forgeInfo)
         {
-            string version = "";
+            var version = "";
             TcpClient tcp = ProxyHandler.newTcpClient(host, port);
             tcp.ReceiveTimeout = 30000; // 30 seconds
             tcp.ReceiveBufferSize = 1024 * 1024;
-            SocketWrapper socketWrapper = new SocketWrapper(tcp);
-            DataTypes dataTypes = new DataTypes(MC18Version);
+            var socketWrapper = new SocketWrapper(tcp);
+            var dataTypes = new DataTypes(MC18Version);
 
             byte[] packet_id = dataTypes.GetVarInt(0);
             byte[] protocol_version = dataTypes.GetVarInt(-1);
@@ -1361,7 +1355,7 @@ namespace MinecraftClient.Protocol.Handlers
             int packetLength = dataTypes.ReadNextVarIntRAW(socketWrapper);
             if (packetLength > 0) //Read Response length
             {
-                Queue<byte> packetData = new Queue<byte>(socketWrapper.ReadDataRAW(packetLength));
+                var packetData = new Queue<byte>(socketWrapper.ReadDataRAW(packetLength));
                 if (dataTypes.ReadNextVarInt(packetData) == 0x00) //Read Packet ID
                 {
                     string result = dataTypes.ReadNextString(packetData); //Get the Json data
@@ -1441,7 +1435,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1449,7 +1443,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> fields = new List<byte>();
+                var fields = new List<byte>();
                 fields.AddRange(dataTypes.GetVarInt(PlayerEntityID));
                 fields.AddRange(dataTypes.GetVarInt(ActionID));
                 fields.AddRange(dataTypes.GetVarInt(0));
@@ -1457,7 +1451,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1473,7 +1467,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1492,10 +1486,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 return SendPluginChannelPacket("minecraft:brand", dataTypes.GetString(brandInfo));
             }
-            else
-            {
-                return SendPluginChannelPacket("MC|Brand", dataTypes.GetString(brandInfo));
-            }
+            return SendPluginChannelPacket("MC|Brand", dataTypes.GetString(brandInfo));
         }
 
         /// <summary>
@@ -1513,12 +1504,12 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> fields = new List<byte>();
+                var fields = new List<byte>();
                 fields.AddRange(dataTypes.GetString(language));
                 fields.Add(viewDistance);
                 fields.AddRange(protocolversion >= MC19Version
                     ? dataTypes.GetVarInt(chatMode)
-                    : new byte[] { chatMode });
+                    : new[] { chatMode });
                 fields.Add(chatColors ? (byte)1 : (byte)0);
                 if (protocolversion < MC18Version)
                 {
@@ -1531,7 +1522,7 @@ namespace MinecraftClient.Protocol.Handlers
                 SendPacket(PacketTypesOut.ClientSettings, fields);
             }
             catch (SocketException) { }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
             return false;
         }
@@ -1548,8 +1539,8 @@ namespace MinecraftClient.Protocol.Handlers
         {
             if (handler.GetTerrainEnabled())
             {
-                byte[] yawpitch = new byte[0];
-                PacketTypesOut packetType = PacketTypesOut.PlayerPosition;
+                var yawpitch = new byte[0];
+                var packetType = PacketTypesOut.PlayerPosition;
 
                 if (yaw.HasValue && pitch.HasValue)
                 {
@@ -1567,14 +1558,14 @@ namespace MinecraftClient.Protocol.Handlers
                             : new byte[0],
                         dataTypes.GetDouble(location.Z),
                         yawpitch,
-                        new byte[] { onGround ? (byte)1 : (byte)0 }));
+                        new[] { onGround ? (byte)1 : (byte)0 }));
                     return true;
                 }
                 catch (SocketException) { return false; }
-                catch (System.IO.IOException) { return false; }
+                catch (IOException) { return false; }
                 catch (ObjectDisposedException) { return false; }
             }
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -1603,7 +1594,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1622,7 +1613,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1636,7 +1627,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> fields = new List<byte>();
+                var fields = new List<byte>();
                 fields.AddRange(dataTypes.GetVarInt(EntityID));
                 fields.AddRange(dataTypes.GetVarInt(type));
 
@@ -1650,7 +1641,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1659,7 +1650,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> fields = new List<byte>();
+                var fields = new List<byte>();
                 fields.AddRange(dataTypes.GetVarInt(EntityID));
                 fields.AddRange(dataTypes.GetVarInt(type));
                 fields.AddRange(dataTypes.GetFloat(X));
@@ -1675,14 +1666,14 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
         public bool SendInteractEntity(int EntityID, int type, int hand)
         {
             try
             {
-                List<byte> fields = new List<byte>();
+                var fields = new List<byte>();
                 fields.AddRange(dataTypes.GetVarInt(EntityID));
                 fields.AddRange(dataTypes.GetVarInt(type));
                 fields.AddRange(dataTypes.GetVarInt(hand));
@@ -1695,7 +1686,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
         public bool SendInteractEntity(int EntityID, int type, float X, float Y, float Z)
@@ -1712,13 +1703,13 @@ namespace MinecraftClient.Protocol.Handlers
                               // TODO once Player Block Placement is implemented for older versions
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetVarInt(hand));
                 SendPacket(PacketTypesOut.UseItem, packet);
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1726,7 +1717,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetVarInt(status));
                 packet.AddRange(dataTypes.GetLocation(location));
                 packet.AddRange(dataTypes.GetVarInt(dataTypes.GetBlockFace(face)));
@@ -1734,7 +1725,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1744,7 +1735,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return false; // NOT IMPLEMENTED for older MC versions
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetVarInt(hand));
                 packet.AddRange(dataTypes.GetLocation(location));
                 packet.AddRange(dataTypes.GetVarInt(dataTypes.GetBlockFace(face)));
@@ -1756,7 +1747,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1764,13 +1755,13 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetShort(slot));
                 SendPacket(PacketTypesOut.HeldItemChange, packet);
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1809,7 +1800,7 @@ namespace MinecraftClient.Protocol.Handlers
                     case WindowActionType.AddDragMiddle:   button = 9;  mode = 5; item = new Item(ItemType.Null, 0, null); break;
                 }
 
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.Add((byte)windowId);
                 packet.AddRange(dataTypes.GetShort((short)slotId));
                 packet.Add(button);
@@ -1825,7 +1816,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1833,14 +1824,14 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetShort((short)slot));
                 packet.AddRange(dataTypes.GetItemSlot(new Item(itemType, count, nbt), itemPalette));
                 SendPacket(PacketTypesOut.CreativeInventoryAction, packet);
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1850,12 +1841,12 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 if (animation == 0 || animation == 1)
                 {
-                    List<byte> packet = new List<byte>();
+                    var packet = new List<byte>();
 
                     if (protocolversion < MC18Version)
                     {
                         packet.AddRange(dataTypes.GetInt(playerid));
-                        packet.Add((byte)1); // Swing arm
+                        packet.Add(1); // Swing arm
                     }
                     else if (protocolversion < MC19Version)
                     {
@@ -1869,13 +1860,10 @@ namespace MinecraftClient.Protocol.Handlers
                     SendPacket(PacketTypesOut.Animation, packet);
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                return false;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1892,7 +1880,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1909,7 +1897,7 @@ namespace MinecraftClient.Protocol.Handlers
                 if (line4.Length > 23)
                     line4 = line1.Substring(0, 23);
 
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.AddRange(dataTypes.GetLocation(sign));
                 packet.AddRange(dataTypes.GetString(line1));
                 packet.AddRange(dataTypes.GetString(line2));
@@ -1919,7 +1907,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
         
@@ -1929,7 +1917,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 try
                 {
-                    List<byte> packet = new List<byte>();
+                    var packet = new List<byte>();
                     packet.AddRange(dataTypes.GetLocation(location));
                     packet.AddRange(dataTypes.GetString(command));
                     packet.AddRange(dataTypes.GetVarInt((int)mode));
@@ -1938,17 +1926,17 @@ namespace MinecraftClient.Protocol.Handlers
                     return true;
                 }
                 catch (SocketException) { return false; }
-                catch (System.IO.IOException) { return false; }
+                catch (IOException) { return false; }
                 catch (ObjectDisposedException) { return false; }
             }
-            else { return false;  }
+            return false;
         }
 
         public bool SendWindowConfirmation(byte windowID, short actionID, bool accepted)
         {
             try
             {
-                List<byte> packet = new List<byte>();
+                var packet = new List<byte>();
                 packet.Add(windowID);
                 packet.AddRange(dataTypes.GetShort(actionID));
                 packet.Add(accepted ? (byte)1 : (byte)0);
@@ -1956,7 +1944,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
             catch (ObjectDisposedException) { return false; }
         }
 
@@ -1967,16 +1955,16 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 try
                 {
-                    List<byte> packet = new List<byte>();
+                    var packet = new List<byte>();
                     packet.AddRange(dataTypes.GetVarInt(selectedSlot));
                     SendPacket(PacketTypesOut.SelectTrade, packet);
                     return true;
                 }
                 catch (SocketException) { return false; }
-                catch (System.IO.IOException) { return false; }
+                catch (IOException) { return false; }
                 catch (ObjectDisposedException) { return false; }
             }
-            else { return false; }
+            return false;
         }
     }
 }

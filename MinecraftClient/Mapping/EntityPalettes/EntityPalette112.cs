@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Mapping.EntityPalettes
 {
     /// <summary>
@@ -10,7 +8,7 @@ namespace MinecraftClient.Mapping.EntityPalettes
     /// </summary>
     public class EntityPalette112 : EntityPalette
     {
-        private static Dictionary<int, EntityType> mappingsObjects = new Dictionary<int, EntityType>()
+        private static Dictionary<int, EntityType> mappingsObjects = new Dictionary<int, EntityType>
         {
             // https://wiki.vg/Entity_metadata#Objects
             { 1, EntityType.Boat },
@@ -42,7 +40,7 @@ namespace MinecraftClient.Mapping.EntityPalettes
             { 93, EntityType.DragonFireball },
         };
 
-        private static Dictionary<int, EntityType> mappingsMobs = new Dictionary<int, EntityType>()
+        private static Dictionary<int, EntityType> mappingsMobs = new Dictionary<int, EntityType>
         {
             { 1, EntityType.Item },
             { 2, EntityType.ExperienceOrb },

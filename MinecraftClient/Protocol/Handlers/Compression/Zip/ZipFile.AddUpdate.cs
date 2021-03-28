@@ -27,9 +27,9 @@
 
 
 using System;
-using System.IO;
 using System.Collections.Generic;
-
+using System.IO;
+using System.Text;
 namespace Ionic.Zip
 {
     public partial class ZipFile
@@ -403,7 +403,7 @@ namespace Ionic.Zip
         public ZipEntry AddFile(string fileName, String directoryPathInArchive)
         {
             string nameInArchive = ZipEntry.NameInArchive(fileName, directoryPathInArchive);
-            ZipEntry ze = ZipEntry.CreateFromFile(fileName, nameInArchive);
+            var ze = ZipEntry.CreateFromFile(fileName, nameInArchive);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", fileName);
             return _InternalAddEntry(ze);
         }
@@ -423,14 +423,14 @@ namespace Ionic.Zip
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.SelectEntries(String)" />
         /// <seealso cref="Ionic.Zip.ZipFile.RemoveSelectedEntries(String)" />
-        public void RemoveEntries(System.Collections.Generic.ICollection<ZipEntry> entriesToRemove)
+        public void RemoveEntries(ICollection<ZipEntry> entriesToRemove)
         {
             if (entriesToRemove == null)
                 throw new ArgumentNullException("entriesToRemove");
 
             foreach (ZipEntry e in entriesToRemove)
             {
-                this.RemoveEntry(e);
+                RemoveEntry(e);
             }
         }
 
@@ -447,14 +447,14 @@ namespace Ionic.Zip
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.SelectEntries(String)" />
         /// <seealso cref="Ionic.Zip.ZipFile.RemoveSelectedEntries(String)" />
-        public void RemoveEntries(System.Collections.Generic.ICollection<String> entriesToRemove)
+        public void RemoveEntries(ICollection<String> entriesToRemove)
         {
             if (entriesToRemove == null)
                 throw new ArgumentNullException("entriesToRemove");
 
             foreach (String e in entriesToRemove)
             {
-                this.RemoveEntry(e);
+                RemoveEntry(e);
             }
         }
 
@@ -514,9 +514,9 @@ namespace Ionic.Zip
         /// </example>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
-        public void AddFiles(System.Collections.Generic.IEnumerable<String> fileNames)
+        public void AddFiles(IEnumerable<String> fileNames)
         {
-            this.AddFiles(fileNames, null);
+            AddFiles(fileNames, null);
         }
 
 
@@ -545,9 +545,9 @@ namespace Ionic.Zip
         ///   the filesystem. The name of the file may be a relative path or a fully-qualified path.
         /// </param>
         ///
-        public void UpdateFiles(System.Collections.Generic.IEnumerable<String> fileNames)
+        public void UpdateFiles(IEnumerable<String> fileNames)
         {
-            this.UpdateFiles(fileNames, null);
+            UpdateFiles(fileNames, null);
         }
 
 
@@ -593,7 +593,7 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
-        public void AddFiles(System.Collections.Generic.IEnumerable<String> fileNames, String directoryPathInArchive)
+        public void AddFiles(IEnumerable<String> fileNames, String directoryPathInArchive)
         {
             AddFiles(fileNames, false, directoryPathInArchive);
         }
@@ -659,7 +659,7 @@ namespace Ionic.Zip
         ///   the entries added to the ZipFile.
         /// </param>
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
-        public void AddFiles(System.Collections.Generic.IEnumerable<String> fileNames,
+        public void AddFiles(IEnumerable<String> fileNames,
                              bool preserveDirHierarchy,
                              String directoryPathInArchive)
         {
@@ -677,10 +677,10 @@ namespace Ionic.Zip
                     {
                         //string s = SharedUtilities.NormalizePath(Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
                         string s = Path.GetFullPath(Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
-                        this.AddFile(f, s);
+                        AddFile(f, s);
                     }
                     else
-                        this.AddFile(f, null);
+                        AddFile(f, null);
                 }
             }
             else
@@ -688,7 +688,7 @@ namespace Ionic.Zip
                 foreach (var f in fileNames)
                 {
                     if (_addOperationCanceled) break;
-                    this.AddFile(f, directoryPathInArchive);
+                    AddFile(f, directoryPathInArchive);
                 }
             }
             if (!_addOperationCanceled)
@@ -735,14 +735,14 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
-        public void UpdateFiles(System.Collections.Generic.IEnumerable<String> fileNames, String directoryPathInArchive)
+        public void UpdateFiles(IEnumerable<String> fileNames, String directoryPathInArchive)
         {
             if (fileNames == null)
                 throw new ArgumentNullException("fileNames");
 
             OnAddStarted();
             foreach (var f in fileNames)
-                this.UpdateFile(f, directoryPathInArchive);
+                UpdateFile(f, directoryPathInArchive);
             OnAddCompleted();
         }
 
@@ -899,8 +899,8 @@ namespace Ionic.Zip
             // ideally this would all be transactional!
             var key = ZipEntry.NameInArchive(fileName, directoryPathInArchive);
             if (this[key] != null)
-                this.RemoveEntry(key);
-            return this.AddFile(fileName, directoryPathInArchive);
+                RemoveEntry(key);
+            return AddFile(fileName, directoryPathInArchive);
         }
 
 
@@ -978,7 +978,7 @@ namespace Ionic.Zip
         /// </returns>
         public ZipEntry UpdateDirectory(string directoryName, String directoryPathInArchive)
         {
-            return this.AddOrUpdateDirectoryImpl(directoryName, directoryPathInArchive, AddOrUpdateAction.AddOrUpdate);
+            return AddOrUpdateDirectoryImpl(directoryName, directoryPathInArchive, AddOrUpdateAction.AddOrUpdate);
         }
 
 
@@ -1139,7 +1139,7 @@ namespace Ionic.Zip
 #if SILVERLIGHT
             return AddEntry(entryName, content, System.Text.Encoding.UTF8);
 #else
-            return AddEntry(entryName, content, System.Text.Encoding.Default);
+            return AddEntry(entryName, content, Encoding.Default);
 #endif
         }
 
@@ -1189,7 +1189,7 @@ namespace Ionic.Zip
         ///
         /// <returns>The <c>ZipEntry</c> added.</returns>
         ///
-        public ZipEntry AddEntry(string entryName, string content, System.Text.Encoding encoding)
+        public ZipEntry AddEntry(string entryName, string content, Encoding encoding)
         {
             // cannot employ a using clause here.  We need the stream to
             // persist after exit from this method.
@@ -1293,7 +1293,7 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddEntry(string entryName, Stream stream)
         {
-            ZipEntry ze = ZipEntry.CreateForStream(entryName, stream);
+            var ze = ZipEntry.CreateForStream(entryName, stream);
             ze.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
@@ -1484,7 +1484,7 @@ namespace Ionic.Zip
         /// </example>
         public ZipEntry AddEntry(string entryName, WriteDelegate writer)
         {
-            ZipEntry ze = ZipEntry.CreateForWriter(entryName, writer);
+            var ze = ZipEntry.CreateForWriter(entryName, writer);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
         }
@@ -1598,7 +1598,7 @@ namespace Ionic.Zip
         ///
         public ZipEntry AddEntry(string entryName, OpenDelegate opener, CloseDelegate closer)
         {
-            ZipEntry ze = ZipEntry.CreateForJitStreamProvider(entryName, opener, closer);
+            var ze = ZipEntry.CreateForJitStreamProvider(entryName, opener, closer);
             ze.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
@@ -1610,17 +1610,17 @@ namespace Ionic.Zip
         {
             // stamp all the props onto the entry
             ze._container = new ZipContainer(this);
-            ze.CompressionMethod = this.CompressionMethod;
-            ze.CompressionLevel = this.CompressionLevel;
-            ze.ExtractExistingFile = this.ExtractExistingFile;
-            ze.ZipErrorAction = this.ZipErrorAction;
-            ze.SetCompression = this.SetCompression;
-            ze.AlternateEncoding = this.AlternateEncoding;
-            ze.AlternateEncodingUsage = this.AlternateEncodingUsage;
-            ze.Password = this._Password;
-            ze.Encryption = this.Encryption;
-            ze.EmitTimesInWindowsFormatWhenSaving = this._emitNtfsTimes;
-            ze.EmitTimesInUnixFormatWhenSaving = this._emitUnixTimes;
+            ze.CompressionMethod = CompressionMethod;
+            ze.CompressionLevel = CompressionLevel;
+            ze.ExtractExistingFile = ExtractExistingFile;
+            ze.ZipErrorAction = ZipErrorAction;
+            ze.SetCompression = SetCompression;
+            ze.AlternateEncoding = AlternateEncoding;
+            ze.AlternateEncodingUsage = AlternateEncodingUsage;
+            ze.Password = _Password;
+            ze.Encryption = Encryption;
+            ze.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
+            ze.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
             //string key = DictionaryKeyForEntry(ze);
             InternalAddEntry(ze.FileName,ze);
             AfterAddEntry(ze);
@@ -1664,7 +1664,7 @@ namespace Ionic.Zip
 #if SILVERLIGHT
             return UpdateEntry(entryName, content, System.Text.Encoding.UTF8);
 #else
-            return UpdateEntry(entryName, content, System.Text.Encoding.Default);
+            return UpdateEntry(entryName, content, Encoding.Default);
 #endif
         }
 
@@ -1697,7 +1697,7 @@ namespace Ionic.Zip
         ///
         /// <returns>The <c>ZipEntry</c> added.</returns>
         ///
-        public ZipEntry UpdateEntry(string entryName, string content, System.Text.Encoding encoding)
+        public ZipEntry UpdateEntry(string entryName, string content, Encoding encoding)
         {
             RemoveEntryForUpdate(entryName);
             return AddEntry(entryName, content, encoding);
@@ -1824,7 +1824,7 @@ namespace Ionic.Zip
             }
             var key = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
             if (this[key] != null)
-                this.RemoveEntry(key);
+                RemoveEntry(key);
         }
 
 
@@ -2034,11 +2034,11 @@ namespace Ionic.Zip
         public ZipEntry AddDirectoryByName(string directoryNameInArchive)
         {
             // workitem 9073
-            ZipEntry dir = ZipEntry.CreateFromNothing(directoryNameInArchive);
+            var dir = ZipEntry.CreateFromNothing(directoryNameInArchive);
             dir._container = new ZipContainer(this);
             dir.MarkAsDirectory();
-            dir.AlternateEncoding = this.AlternateEncoding;  // workitem 8984
-            dir.AlternateEncodingUsage = this.AlternateEncodingUsage;
+            dir.AlternateEncoding = AlternateEncoding;  // workitem 8984
+            dir.AlternateEncodingUsage = AlternateEncodingUsage;
             dir.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             dir.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
             dir.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
@@ -2112,8 +2112,8 @@ namespace Ionic.Zip
             {
                 baseDir = ZipEntry.CreateFromFile(directoryName, dirForEntries);
                 baseDir._container = new ZipContainer(this);
-                baseDir.AlternateEncoding = this.AlternateEncoding;  // workitem 6410
-                baseDir.AlternateEncodingUsage = this.AlternateEncodingUsage;
+                baseDir.AlternateEncoding = AlternateEncoding;  // workitem 6410
+                baseDir.AlternateEncodingUsage = AlternateEncodingUsage;
                 baseDir.MarkAsDirectory();
                 baseDir.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
                 baseDir.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
@@ -2156,9 +2156,9 @@ namespace Ionic.Zip
 #elif NETCF
                             FileAttributes fileAttrs = (FileAttributes) NetCfFile.GetAttributes(dir);
 #else
-                            FileAttributes fileAttrs = System.IO.File.GetAttributes(dir);
+                            FileAttributes fileAttrs = File.GetAttributes(dir);
 #endif
-                            if (this.AddDirectoryWillTraverseReparsePoints
+                            if (AddDirectoryWillTraverseReparsePoints
 #if !SILVERLIGHT
                                 || ((fileAttrs & FileAttributes.ReparsePoint) == 0)
 #endif

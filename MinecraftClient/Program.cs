@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using MinecraftClient.Protocol;
 using System.Reflection;
+using System.Text;
 using System.Threading;
+using MinecraftClient.ChatBots;
+using MinecraftClient.Commands;
+using MinecraftClient.Protocol;
 using MinecraftClient.Protocol.Handlers.Forge;
 using MinecraftClient.Protocol.Session;
 using MinecraftClient.WinAPI;
-
 namespace MinecraftClient
 {
     /// <summary>
@@ -33,10 +35,10 @@ namespace MinecraftClient
         public const string Version = MCHighestVersion;
         public const string MCLowestVersion = "1.4.6";
         public const string MCHighestVersion = "1.16.5";
-        public static readonly string BuildInfo = null;
+        public static readonly string BuildInfo;
 
-        private static Thread offlinePrompt = null;
-        private static bool useMcVersionOnce = false;
+        private static Thread offlinePrompt;
+        private static bool useMcVersionOnce;
 
         /// <summary>
         /// The main entry point of Minecraft Console Client
@@ -67,7 +69,7 @@ namespace MinecraftClient
                     ConsoleIO.BasicIO_NoColor = true;
                 }
                 ConsoleIO.BasicIO = true;
-                args = args.Where(o => !Object.ReferenceEquals(o, args[args.Length - 1])).ToArray();
+                args = args.Where(o => !ReferenceEquals(o, args[args.Length - 1])).ToArray();
             }
 
             //Take advantage of Windows 10 / Mac / Linux UTF-8 console
@@ -77,16 +79,16 @@ namespace MinecraftClient
             }
 
             //Process ini configuration file
-            if (args.Length >= 1 && System.IO.File.Exists(args[0]) && System.IO.Path.GetExtension(args[0]).ToLower() == ".ini")
+            if (args.Length >= 1 && File.Exists(args[0]) && Path.GetExtension(args[0]).ToLower() == ".ini")
             {
                 Settings.LoadSettings(args[0]);
 
                 //remove ini configuration file from arguments array
-                List<string> args_tmp = args.ToList<string>();
+                var args_tmp = args.ToList();
                 args_tmp.RemoveAt(0);
                 args = args_tmp.ToArray();
             }
-            else if (System.IO.File.Exists("MinecraftClient.ini"))
+            else if (File.Exists("MinecraftClient.ini"))
             {
                 Settings.LoadSettings("MinecraftClient.ini");
             }
@@ -163,7 +165,7 @@ namespace MinecraftClient
             {
                 //Hide password length
                 Console.CursorTop--; Console.Write(Translations.Get("mcc.password_hidden", "<******>"));
-                for (int i = 19; i < Console.BufferWidth; i++) { Console.Write(' '); }
+                for (var i = 19; i < Console.BufferWidth; i++) { Console.Write(' '); }
             }
         }
 
@@ -172,9 +174,9 @@ namespace MinecraftClient
         /// </summary>
         private static void InitializeClient()
         {
-            SessionToken session = new SessionToken();
+            var session = new SessionToken();
 
-            ProtocolHandler.LoginResult result = ProtocolHandler.LoginResult.LoginRequired;
+            var result = ProtocolHandler.LoginResult.LoginRequired;
 
             if (Settings.Password == "-")
             {
@@ -234,12 +236,12 @@ namespace MinecraftClient
                 }
 
                 //Get server version
-                int protocolversion = 0;
+                var protocolversion = 0;
                 ForgeInfo forgeInfo = null;
 
                 if (Settings.ServerVersion != "" && Settings.ServerVersion.ToLower() != "auto")
                 {
-                    protocolversion = Protocol.ProtocolHandler.MCVer2ProtocolVersion(Settings.ServerVersion);
+                    protocolversion = ProtocolHandler.MCVer2ProtocolVersion(Settings.ServerVersion);
 
                     if (protocolversion != 0)
                     {
@@ -262,7 +264,7 @@ namespace MinecraftClient
                     else Translations.WriteLine("mcc.retrieve");
                     if (!ProtocolHandler.GetServerInfo(Settings.ServerIP, Settings.ServerPort, ref protocolversion, ref forgeInfo))
                     {
-                        HandleFailure(Translations.Get("error.ping"), true, ChatBots.AutoRelog.DisconnectReason.ConnectionLost);
+                        HandleFailure(Translations.Get("error.ping"), true, ChatBot.DisconnectReason.ConnectionLost);
                         return;
                     }
                 }
@@ -277,7 +279,7 @@ namespace MinecraftClient
                     }
                     else
                     {
-                        HandleFailure(Translations.Get("error.forgeforce"), true, ChatBots.AutoRelog.DisconnectReason.ConnectionLost);
+                        HandleFailure(Translations.Get("error.forgeforce"), true, ChatBot.DisconnectReason.ConnectionLost);
                         return;
                     }
                 }
@@ -305,7 +307,7 @@ namespace MinecraftClient
             else
             {
                 string failureMessage = Translations.Get("error.login");
-                string failureReason = "";
+                var failureReason = "";
                 switch (result)
                 {
                     case ProtocolHandler.LoginResult.AccountMigrated: failureReason = "error.login.migrated"; break;
@@ -341,7 +343,7 @@ namespace MinecraftClient
                 if (delaySeconds > 0)
                 {
                     Translations.WriteLine("mcc.restart_delay", delaySeconds);
-                    System.Threading.Thread.Sleep(delaySeconds * 1000);
+                    Thread.Sleep(delaySeconds * 1000);
                 }
                 Translations.WriteLine("mcc.restart");
                 InitializeClient();
@@ -369,7 +371,7 @@ namespace MinecraftClient
         /// <param name="errorMessage">Error message to display and optionally pass to AutoRelog bot</param>
         /// <param name="versionError">Specify if the error is related to an incompatible or unkown server version</param>
         /// <param name="disconnectReason">If set, the error message will be processed by the AutoRelog bot</param>
-        public static void HandleFailure(string errorMessage = null, bool versionError = false, ChatBots.AutoRelog.DisconnectReason? disconnectReason = null)
+        public static void HandleFailure(string errorMessage = null, bool versionError = false, ChatBot.DisconnectReason? disconnectReason = null)
         {
             if (!String.IsNullOrEmpty(errorMessage))
             {
@@ -380,7 +382,7 @@ namespace MinecraftClient
 
                 if (disconnectReason.HasValue)
                 {
-                    if (ChatBots.AutoRelog.OnDisconnectStatic(disconnectReason.Value, errorMessage))
+                    if (AutoRelog.OnDisconnectStatic(disconnectReason.Value, errorMessage))
                         return; //AutoRelog is triggering a restart of the client
                 }
             }
@@ -403,7 +405,7 @@ namespace MinecraftClient
                 {
                     offlinePrompt = new Thread(new ThreadStart(delegate
                     {
-                        string command = " ";
+                        var command = " ";
                         ConsoleIO.WriteLineFormatted(Translations.Get("mcc.disconnected", (Settings.internalCmdChar == ' ' ? "" : "" + Settings.internalCmdChar)));
                         Translations.WriteLineFormatted("mcc.press_exit");
                         while (command.Length > 0)
@@ -415,7 +417,7 @@ namespace MinecraftClient
                             command = Console.ReadLine().Trim();
                             if (command.Length > 0)
                             {
-                                string message = "";
+                                var message = "";
 
                                 if (Settings.internalCmdChar != ' '
                                     && command[0] == Settings.internalCmdChar)
@@ -423,20 +425,20 @@ namespace MinecraftClient
 
                                 if (command.StartsWith("reco"))
                                 {
-                                    message = new Commands.Reco().Run(null, Settings.ExpandVars(command), null);
+                                    message = new Reco().Run(null, Settings.ExpandVars(command), null);
                                 }
                                 else if (command.StartsWith("connect"))
                                 {
-                                    message = new Commands.Connect().Run(null, Settings.ExpandVars(command), null);
+                                    message = new Connect().Run(null, Settings.ExpandVars(command), null);
                                 }
                                 else if (command.StartsWith("exit") || command.StartsWith("quit"))
                                 {
-                                    message = new Commands.Exit().Run(null, Settings.ExpandVars(command), null);
+                                    message = new Exit().Run(null, Settings.ExpandVars(command), null);
                                 }
                                 else if (command.StartsWith("help"))
                                 {
-                                    ConsoleIO.WriteLineFormatted("§8MCC: " + (Settings.internalCmdChar == ' ' ? "" : "" + Settings.internalCmdChar) + new Commands.Reco().GetCmdDescTranslated());
-                                    ConsoleIO.WriteLineFormatted("§8MCC: " + (Settings.internalCmdChar == ' ' ? "" : "" + Settings.internalCmdChar) + new Commands.Connect().GetCmdDescTranslated());
+                                    ConsoleIO.WriteLineFormatted("§8MCC: " + (Settings.internalCmdChar == ' ' ? "" : "" + Settings.internalCmdChar) + new Reco().GetCmdDescTranslated());
+                                    ConsoleIO.WriteLineFormatted("§8MCC: " + (Settings.internalCmdChar == ' ' ? "" : "" + Settings.internalCmdChar) + new Connect().GetCmdDescTranslated());
                                 }
                                 else ConsoleIO.WriteLineFormatted(Translations.Get("icmd.unknown", command.Split(' ')[0]));
 
@@ -492,10 +494,10 @@ namespace MinecraftClient
         /// </summary>
         static Program()
         {
-            AssemblyConfigurationAttribute attribute
+            var attribute
              = typeof(Program)
                 .Assembly
-                .GetCustomAttributes(typeof(System.Reflection.AssemblyConfigurationAttribute), false)
+                .GetCustomAttributes(typeof(AssemblyConfigurationAttribute), false)
                 .FirstOrDefault() as AssemblyConfigurationAttribute;
             if (attribute != null)
                 BuildInfo = attribute.Configuration;

@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using MinecraftClient.Crypto;
-using MinecraftClient.Proxy;
-using System.Security.Cryptography;
-using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
-
+using MinecraftClient.Mapping;
+using MinecraftClient.Proxy;
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -19,12 +19,12 @@ namespace MinecraftClient.Protocol.Handlers
     class Protocol16Handler : IMinecraftCom
     {
         IMinecraftComHandler handler;
-        private bool autocomplete_received = false;
+        private bool autocomplete_received;
         private string autocomplete_result = "";
-        private bool encrypted = false;
+        private bool encrypted;
         private int protocolversion;
         private Thread netRead;
-        Crypto.IAesStream s;
+        IAesStream s;
         TcpClient c;
 
         public Protocol16Handler(TcpClient Client, int ProtocolVersion, IMinecraftComHandler Handler)
@@ -32,9 +32,9 @@ namespace MinecraftClient.Protocol.Handlers
             ConsoleIO.SetAutoCompleteEngine(this);
             if (protocolversion >= 72)
                 ChatParser.InitTranslations();
-            this.c = Client;
-            this.protocolversion = ProtocolVersion;
-            this.handler = Handler;
+            c = Client;
+            protocolversion = ProtocolVersion;
+            handler = Handler;
 
             if (Handler.GetTerrainEnabled())
             {
@@ -57,7 +57,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private Protocol16Handler(TcpClient Client)
         {
-            this.c = Client;
+            c = Client;
         }
 
         private void Updater()
@@ -70,7 +70,7 @@ namespace MinecraftClient.Protocol.Handlers
                 }
                 while (Update());
             }
-            catch (System.IO.IOException) { }
+            catch (IOException) { }
             catch (SocketException) { }
             catch (ObjectDisposedException) { }
 
@@ -80,7 +80,7 @@ namespace MinecraftClient.Protocol.Handlers
         private bool Update()
         {
             handler.OnUpdate();
-            bool connection_ok = true;
+            var connection_ok = true;
             while (c.Client.Available > 0 && connection_ok)
             {
                 byte id = readNextByte();
@@ -91,10 +91,10 @@ namespace MinecraftClient.Protocol.Handlers
 
         private bool processPacket(byte id)
         {
-            int nbr = 0;
+            var nbr = 0;
             switch (id)
             {
-                case 0x00: byte[] keepalive = new byte[5] { 0, 0, 0, 0, 0 };
+                case 0x00: var keepalive = new byte[5] { 0, 0, 0, 0, 0 };
                     Receive(keepalive, 1, 4, SocketFlags.None);
                     handler.OnServerKeepAlive();
                     Send(keepalive); break;
@@ -127,7 +127,7 @@ namespace MinecraftClient.Protocol.Handlers
                 case 0x1A: readData(18); break;
                 case 0x1B: if (protocolversion >= 72) { readData(10); } break;
                 case 0x1C: readData(10); break;
-                case 0x1D: nbr = (int)readNextByte(); readData(nbr * 4); break;
+                case 0x1D: nbr = readNextByte(); readData(nbr * 4); break;
                 case 0x1E: readData(4); break;
                 case 0x1F: readData(7); break;
                 case 0x20: readData(6); break;
@@ -172,7 +172,7 @@ namespace MinecraftClient.Protocol.Handlers
                     break;
                 case 0xC9:
                     string name = readNextString(); bool online = readNextByte() != 0x00; readData(2);
-                    Guid FakeUUID = new Guid(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(name)).Take(16).ToArray());
+                    var FakeUUID = new Guid(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(name)).Take(16).ToArray());
                     if (online) { handler.OnPlayerJoin(FakeUUID, name); } else { handler.OnPlayerLeave(FakeUUID); }
                     break;
                 case 0xCA: if (protocolversion >= 72) { readData(9); } else readData(3); break;
@@ -196,7 +196,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private void StartUpdating()
         {
-            netRead = new Thread(new ThreadStart(Updater));
+            netRead = new Thread(Updater);
             netRead.Name = "ProtocolPacketHandler";
             netRead.Start();
         }
@@ -220,7 +220,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 try
                 {
-                    byte[] cache = new byte[offset];
+                    var cache = new byte[offset];
                     Receive(cache, 0, offset, SocketFlags.None);
                 }
                 catch (OutOfMemoryException) { }
@@ -229,15 +229,15 @@ namespace MinecraftClient.Protocol.Handlers
 
         private string readNextString()
         {
-            ushort length = (ushort)readNextShort();
+            var length = (ushort)readNextShort();
             if (length > 0)
             {
-                byte[] cache = new byte[length * 2];
+                var cache = new byte[length * 2];
                 Receive(cache, 0, length * 2, SocketFlags.None);
                 string result = Encoding.BigEndianUnicode.GetString(cache);
                 return result;
             }
-            else return "";
+            return "";
         }
         public bool SendEntityAction(int PlayerEntityID, int ActionID)
         {
@@ -247,14 +247,14 @@ namespace MinecraftClient.Protocol.Handlers
         private byte[] readNextByteArray()
         {
             short len = readNextShort();
-            byte[] data = new byte[len];
+            var data = new byte[len];
             Receive(data, 0, len, SocketFlags.None);
             return data;
         }
 
         private short readNextShort()
         {
-            byte[] tmp = new byte[2];
+            var tmp = new byte[2];
             Receive(tmp, 0, 2, SocketFlags.None);
             Array.Reverse(tmp);
             return BitConverter.ToInt16(tmp, 0);
@@ -262,7 +262,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private int readNextInt()
         {
-            byte[] tmp = new byte[4];
+            var tmp = new byte[4];
             Receive(tmp, 0, 4, SocketFlags.None);
             Array.Reverse(tmp);
             return BitConverter.ToInt32(tmp, 0);
@@ -270,7 +270,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private byte readNextByte()
         {
-            byte[] result = new byte[1];
+            var result = new byte[1];
             Receive(result, 0, 1, SocketFlags.None);
             return result[0];
         }
@@ -293,7 +293,7 @@ namespace MinecraftClient.Protocol.Handlers
         {
             do
             {
-                byte[] id = new byte[1];
+                var id = new byte[1];
                 Receive(id, 0, 1, SocketFlags.None);
                 if (id[0] == 0x7F) { break; }
                 int index = id[0] & 0x1F;
@@ -333,7 +333,7 @@ namespace MinecraftClient.Protocol.Handlers
             if (mode == 0 || mode == 3 || mode == 4)
             {
                 short count = readNextShort();
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     readNextString(); //Players
                 }
@@ -349,7 +349,7 @@ namespace MinecraftClient.Protocol.Handlers
                     //Minecraft 1.6.2
                     readNextInt(); //Entity ID
                     int count = readNextInt();
-                    for (int i = 0; i < count; i++)
+                    for (var i = 0; i < count; i++)
                     {
                         readNextString(); //Property name
                         readData(8); //Property value (Double)
@@ -362,7 +362,7 @@ namespace MinecraftClient.Protocol.Handlers
                     //Minecraft 1.6.0 / 1.6.1
                     readNextInt(); //Entity ID
                     int count = readNextInt();
-                    for (int i = 0; i < count; i++)
+                    for (var i = 0; i < count; i++)
                     {
                         readNextString(); //Property name
                         readData(8); //Property value (Double)
@@ -398,7 +398,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private void Receive(byte[] buffer, int start, int offset, SocketFlags f)
         {
-            int read = 0;
+            var read = 0;
             while (read < offset)
             {
                 if (encrypted)
@@ -421,10 +421,10 @@ namespace MinecraftClient.Protocol.Handlers
         private bool Handshake(string uuid, string username, string sessionID, string host, int port)
         {
             //array
-            byte[] data = new byte[10 + (username.Length + host.Length) * 2];
+            var data = new byte[10 + (username.Length + host.Length) * 2];
 
             //packet id
-            data[0] = (byte)2;
+            data[0] = 2;
 
             //Protocol Version
             data[1] = (byte)protocolversion;
@@ -454,7 +454,7 @@ namespace MinecraftClient.Protocol.Handlers
 
             Send(data);
 
-            byte[] pid = new byte[1];
+            var pid = new byte[1];
             Receive(pid, 0, 1, SocketFlags.None);
             while (pid[0] == 0xFA) //Skip some early plugin messages
             {
@@ -474,16 +474,13 @@ namespace MinecraftClient.Protocol.Handlers
 
                 return StartEncryption(uuid, username, sessionID, token, serverID, PublicServerkey);
             }
-            else
-            {
-                Translations.WriteLineFormatted("error.invalid_response");
-                return false;
-            }
+            Translations.WriteLineFormatted("error.invalid_response");
+            return false;
         }
 
         private bool StartEncryption(string uuid, string username, string sessionID, byte[] token, string serverIDhash, byte[] serverKey)
         {
-            System.Security.Cryptography.RSACryptoServiceProvider RSAService = CryptoHandler.DecodeRSAPublicKey(serverKey);
+            RSACryptoServiceProvider RSAService = CryptoHandler.DecodeRSAPublicKey(serverKey);
             byte[] secretKey = CryptoHandler.GenerateAESPrivateKey();
 
             if (Settings.DebugMessages)
@@ -509,7 +506,7 @@ namespace MinecraftClient.Protocol.Handlers
             Array.Reverse(tokenlen);
 
             //Building the packet
-            byte[] data = new byte[5 + (short)key_enc.Length + (short)token_enc.Length];
+            var data = new byte[5 + (short)key_enc.Length + (short)token_enc.Length];
             data[0] = 0xFC;
             keylen.CopyTo(data, 1);
             key_enc.CopyTo(data, 3);
@@ -520,7 +517,7 @@ namespace MinecraftClient.Protocol.Handlers
             Send(data);
 
             //Getting the next packet
-            byte[] pid = new byte[1];
+            var pid = new byte[1];
             Receive(pid, 0, 1, SocketFlags.None);
             if (pid[0] == 0xFC)
             {
@@ -529,11 +526,8 @@ namespace MinecraftClient.Protocol.Handlers
                 encrypted = true;
                 return true;
             }
-            else
-            {
-                Translations.WriteLineFormatted("error.invalid_encrypt");
-                return false;
-            }
+            Translations.WriteLineFormatted("error.invalid_encrypt");
+            return false;
         }
 
         public bool Login()
@@ -543,7 +537,7 @@ namespace MinecraftClient.Protocol.Handlers
                 Send(new byte[] { 0xCD, 0 });
                 try
                 {
-                    byte[] pid = new byte[1];
+                    var pid = new byte[1];
                     try
                     {
                         if (c.Connected)
@@ -554,13 +548,13 @@ namespace MinecraftClient.Protocol.Handlers
                                 processPacket(pid[0]);
                                 Receive(pid, 0, 1, SocketFlags.None);
                             }
-                            if (pid[0] == (byte)1)
+                            if (pid[0] == 1)
                             {
                                 readData(4); readNextString(); readData(5);
                                 StartUpdating();
                                 return true; //The Server accepted the request
                             }
-                            else if (pid[0] == (byte)0xFF)
+                            if (pid[0] == 0xFF)
                             {
                                 string reason = readNextString();
                                 handler.OnConnectionLost(ChatBot.DisconnectReason.LoginRejected, reason);
@@ -582,7 +576,7 @@ namespace MinecraftClient.Protocol.Handlers
                 }
                 return false; //Login was unsuccessful (received a kick...)
             }
-            else return false;
+            return false;
         }
 
         public void Disconnect()
@@ -591,8 +585,8 @@ namespace MinecraftClient.Protocol.Handlers
 
             try
             {
-                byte[] reason = new byte[3 + (message.Length * 2)];
-                reason[0] = (byte)0xff;
+                var reason = new byte[3 + (message.Length * 2)];
+                reason[0] = 0xff;
 
                 byte[] msglen;
                 msglen = BitConverter.GetBytes((short)message.Length);
@@ -609,7 +603,7 @@ namespace MinecraftClient.Protocol.Handlers
                 Send(reason);
             }
             catch (SocketException) { }
-            catch (System.IO.IOException) { }
+            catch (IOException) { }
         }
 
         public int GetMaxChatMessageLength()
@@ -629,8 +623,8 @@ namespace MinecraftClient.Protocol.Handlers
 
             try
             {
-                byte[] chat = new byte[3 + (message.Length * 2)];
-                chat[0] = (byte)3;
+                var chat = new byte[3 + (message.Length * 2)];
+                chat[0] = 3;
 
                 byte[] msglen;
                 msglen = BitConverter.GetBytes((short)message.Length);
@@ -645,7 +639,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
         }
 
         public bool SendRespawnPacket()
@@ -764,7 +758,7 @@ namespace MinecraftClient.Protocol.Handlers
                 return true;
             }
             catch (SocketException) { return false; }
-            catch (System.IO.IOException) { return false; }
+            catch (IOException) { return false; }
         }
 
         IEnumerable<string> IAutoComplete.AutoComplete(string BehindCursor)
@@ -772,7 +766,7 @@ namespace MinecraftClient.Protocol.Handlers
             if (String.IsNullOrEmpty(BehindCursor))
                 return new string[] { };
 
-            byte[] autocomplete = new byte[3 + (BehindCursor.Length * 2)];
+            var autocomplete = new byte[3 + (BehindCursor.Length * 2)];
             autocomplete[0] = 0xCB;
             byte[] msglen = BitConverter.GetBytes((short)BehindCursor.Length);
             Array.Reverse(msglen); msglen.CopyTo(autocomplete, 1);
@@ -783,8 +777,8 @@ namespace MinecraftClient.Protocol.Handlers
             autocomplete_result = BehindCursor;
             Send(autocomplete);
 
-            int wait_left = 50; //do not wait more than 5 seconds (50 * 100 ms)
-            while (wait_left > 0 && !autocomplete_received) { System.Threading.Thread.Sleep(100); wait_left--; }
+            var wait_left = 50; //do not wait more than 5 seconds (50 * 100 ms)
+            while (wait_left > 0 && !autocomplete_received) { Thread.Sleep(100); wait_left--; }
             if (!String.IsNullOrEmpty(autocomplete_result) && autocomplete_received)
                 ConsoleIO.WriteLineFormatted("§8" + autocomplete_result.Replace((char)0x00, ' '), false);
             return autocomplete_result.Split((char)0x00);
@@ -792,7 +786,7 @@ namespace MinecraftClient.Protocol.Handlers
 
         private static byte[] concatBytes(params byte[][] bytes)
         {
-            List<byte> result = new List<byte>();
+            var result = new List<byte>();
             foreach (byte[] array in bytes)
                 result.AddRange(array);
             return result.ToArray();
@@ -802,17 +796,17 @@ namespace MinecraftClient.Protocol.Handlers
         {
             try
             {
-                string version = "";
+                var version = "";
                 TcpClient tcp = ProxyHandler.newTcpClient(host, port);
                 tcp.ReceiveTimeout = 30000; // 30 seconds
                 tcp.ReceiveTimeout = 5000; //MC 1.7.2+ SpigotMC servers won't respond, so we need a reasonable timeout.
-                byte[] ping = new byte[2] { 0xfe, 0x01 };
+                var ping = new byte[2] { 0xfe, 0x01 };
                 tcp.Client.Send(ping, SocketFlags.None);
                 tcp.Client.Receive(ping, 0, 1, SocketFlags.None);
 
                 if (ping[0] == 0xff)
                 {
-                    Protocol16Handler ComTmp = new Protocol16Handler(tcp);
+                    var ComTmp = new Protocol16Handler(tcp);
                     string result = ComTmp.readNextString();
 
                     if (Settings.DebugMessages)
@@ -834,7 +828,7 @@ namespace MinecraftClient.Protocol.Handlers
                     }
                     else
                     {
-                        protocolversion = (byte)39;
+                        protocolversion = 39;
                         version = "B1.8.1 - 1.3.2";
                     }
 
@@ -842,7 +836,7 @@ namespace MinecraftClient.Protocol.Handlers
 
                     return true;
                 }
-                else return false;
+                return false;
             }
             catch { return false; }
         }

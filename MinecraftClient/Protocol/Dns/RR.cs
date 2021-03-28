@@ -1,5 +1,4 @@
 using System;
-
 namespace Heijden.DNS
 {
 	#region RFC info

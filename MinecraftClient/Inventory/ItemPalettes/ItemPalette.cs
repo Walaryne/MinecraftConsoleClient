@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace MinecraftClient.Inventory.ItemPalettes
 {
     public abstract class ItemPalette
@@ -13,7 +9,7 @@ namespace MinecraftClient.Inventory.ItemPalettes
         public ItemPalette()
         {
             // Index reverse mappings for use in ToId()
-            foreach (KeyValuePair<int, ItemType> entry in GetDict())
+            foreach (var entry in GetDict())
                 DictReverse.Add(entry.Value, entry.Key);
 
             // Hardcoded placeholder types for internal and network use

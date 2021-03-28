@@ -43,11 +43,12 @@
 //
 
 using System;
-using System.Threading;
 using System.Collections.Generic;
 using System.IO;
-using Ionic.Zip;
-
+using System.Text;
+using System.Threading;
+using Ionic.Crc;
+using Ionic.Zlib;
 namespace Ionic.Zip
 {
     /// <summary>
@@ -345,13 +346,13 @@ namespace Ionic.Zip
         {
             // workitem 9307
             _outputStream = stream.CanRead ? stream : new CountingStream(stream);
-            CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
-            CompressionMethod = Ionic.Zip.CompressionMethod.Deflate;
+            CompressionLevel = CompressionLevel.Default;
+            CompressionMethod = CompressionMethod.Deflate;
             _encryption = EncryptionAlgorithm.None;
             _entriesWritten = new Dictionary<String, ZipEntry>(StringComparer.Ordinal);
             _zip64 = Zip64Option.Never;
             _leaveUnderlyingStreamOpen = leaveOpen;
-            Strategy = Ionic.Zlib.CompressionStrategy.Default;
+            Strategy = CompressionStrategy.Default;
             _name = name ?? "(stream)";
 #if !NETCF
             ParallelDeflateThreshold = -1L;
@@ -427,7 +428,7 @@ namespace Ionic.Zip
                 if (_disposed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
 
                 _password = value;
@@ -475,7 +476,7 @@ namespace Ionic.Zip
                 if (_disposed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
                 if (value == EncryptionAlgorithm.Unsupported)
                 {
@@ -516,7 +517,7 @@ namespace Ionic.Zip
         ///   of the compresssion.  For more information see <see
         ///   cref="Ionic.Zlib.CompressionStrategy "/>.
         /// </remarks>
-        public Ionic.Zlib.CompressionStrategy Strategy
+        public CompressionStrategy Strategy
         {
             get;
             set;
@@ -542,7 +543,7 @@ namespace Ionic.Zip
                 if (_disposed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
                 _timestamp = value;
             }
@@ -580,7 +581,7 @@ namespace Ionic.Zip
         ///    alone, and accept the default.
         ///  </para>
         /// </remarks>
-        public Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompressionLevel CompressionLevel
         {
             get;
             set;
@@ -589,7 +590,7 @@ namespace Ionic.Zip
         /// <summary>
         ///   The compression method used on each entry added to the ZipOutputStream.
         /// </summary>
-        public Ionic.Zip.CompressionMethod CompressionMethod
+        public CompressionMethod CompressionMethod
         {
             get;
             set;
@@ -642,7 +643,7 @@ namespace Ionic.Zip
                 if (_disposed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
                 _comment = value;
             }
@@ -678,7 +679,7 @@ namespace Ionic.Zip
                 if (_disposed)
                 {
                     _exceptionPending = true;
-                    throw new System.InvalidOperationException("The stream has been closed.");
+                    throw new InvalidOperationException("The stream has been closed.");
                 }
                 _zip64 = value;
             }
@@ -856,20 +857,20 @@ namespace Ionic.Zip
         {
             get
             {
-                return (_alternateEncoding == System.Text.Encoding.UTF8) &&
+                return (_alternateEncoding == Encoding.UTF8) &&
                     (AlternateEncodingUsage == ZipOption.AsNecessary);
             }
             set
             {
                 if (value)
                 {
-                    _alternateEncoding = System.Text.Encoding.UTF8;
+                    _alternateEncoding = Encoding.UTF8;
                     _alternateEncodingUsage = ZipOption.AsNecessary;
 
                 }
                 else
                 {
-                    _alternateEncoding = Ionic.Zip.ZipOutputStream.DefaultEncoding;
+                    _alternateEncoding = DefaultEncoding;
                     _alternateEncodingUsage = ZipOption.Never;
                 }
             }
@@ -958,7 +959,7 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         [Obsolete("use AlternateEncoding and AlternateEncodingUsage instead.")]
-        public System.Text.Encoding ProvisionalAlternateEncoding
+        public Encoding ProvisionalAlternateEncoding
         {
             get
             {
@@ -983,7 +984,7 @@ namespace Ionic.Zip
         ///     on <see cref="AlternateEncodingUsage"/>.
         ///   </para>
         /// </remarks>
-        public System.Text.Encoding AlternateEncoding
+        public Encoding AlternateEncoding
         {
             get
             {
@@ -1017,11 +1018,11 @@ namespace Ionic.Zip
         /// known as IBM437.
         /// </summary>
         /// <seealso cref="Ionic.Zip.ZipFile.ProvisionalAlternateEncoding"/>
-        public static System.Text.Encoding DefaultEncoding
+        public static Encoding DefaultEncoding
         {
             get
             {
-                return System.Text.Encoding.GetEncoding("IBM437");
+                return Encoding.GetEncoding("IBM437");
             }
         }
 
@@ -1257,25 +1258,25 @@ namespace Ionic.Zip
             if (_disposed)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("The stream has been closed.");
+                throw new InvalidOperationException("The stream has been closed.");
             }
 
             if (buffer==null)
             {
                 _exceptionPending = true;
-                throw new System.ArgumentNullException("buffer");
+                throw new ArgumentNullException("buffer");
             }
 
             if (_currentEntry == null)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("You must call PutNextEntry() before calling Write().");
+                throw new InvalidOperationException("You must call PutNextEntry() before calling Write().");
             }
 
             if (_currentEntry.IsDirectory)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("You cannot Write() data for an entry that is a directory.");
+                throw new InvalidOperationException("You cannot Write() data for an entry that is a directory.");
             }
 
             if (_needToWriteEntryHeader)
@@ -1375,7 +1376,7 @@ namespace Ionic.Zip
             if (_disposed)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("The stream has been closed.");
+                throw new InvalidOperationException("The stream has been closed.");
             }
 
             _FinishCurrentEntry();
@@ -1383,13 +1384,13 @@ namespace Ionic.Zip
             _currentEntry._container = new ZipContainer(this);
             _currentEntry._BitField |= 0x0008;  // workitem 8932
             _currentEntry.SetEntryTimes(DateTime.Now, DateTime.Now, DateTime.Now);
-            _currentEntry.CompressionLevel = this.CompressionLevel;
-            _currentEntry.CompressionMethod = this.CompressionMethod;
+            _currentEntry.CompressionLevel = CompressionLevel;
+            _currentEntry.CompressionMethod = CompressionMethod;
             _currentEntry.Password = _password; // workitem 13909
-            _currentEntry.Encryption = this.Encryption;
+            _currentEntry.Encryption = Encryption;
             // workitem 12634
-            _currentEntry.AlternateEncoding = this.AlternateEncoding;
-            _currentEntry.AlternateEncodingUsage = this.AlternateEncodingUsage;
+            _currentEntry.AlternateEncoding = AlternateEncoding;
+            _currentEntry.AlternateEncodingUsage = AlternateEncodingUsage;
 
             if (entryName.EndsWith("/"))  _currentEntry.MarkAsDirectory();
 
@@ -1418,7 +1419,7 @@ namespace Ionic.Zip
             if (_entryCount > 65534 && _zip64 == Zip64Option.Never)
             {
                 _exceptionPending = true;
-                throw new System.InvalidOperationException("Too many entries. Consider setting ZipOutputStream.EnableZip64.");
+                throw new InvalidOperationException("Too many entries. Consider setting ZipOutputStream.EnableZip64.");
             }
 
             // Write out the header.
@@ -1505,7 +1506,7 @@ namespace Ionic.Zip
                                                                                      Comment,
                                                                                      new ZipContainer(this));
                     Stream wrappedStream = null;
-                    CountingStream cs = _outputStream as CountingStream;
+                    var cs = _outputStream as CountingStream;
                     if (cs != null)
                     {
                         wrappedStream = cs.WrappedStream;
@@ -1614,8 +1615,8 @@ namespace Ionic.Zip
         private Dictionary<String, ZipEntry> _entriesWritten;
         private int _entryCount;
         private ZipOption _alternateEncodingUsage = ZipOption.Never;
-        private System.Text.Encoding _alternateEncoding
-            = System.Text.Encoding.GetEncoding("IBM437"); // default = IBM437
+        private Encoding _alternateEncoding
+            = Encoding.GetEncoding("IBM437"); // default = IBM437
 
         private bool _leaveUnderlyingStreamOpen;
         private bool _disposed;
@@ -1624,12 +1625,12 @@ namespace Ionic.Zip
         private CountingStream _outputCounter;
         private Stream _encryptor;
         private Stream _deflater;
-        private Ionic.Crc.CrcCalculatorStream _entryOutputStream;
+        private CrcCalculatorStream _entryOutputStream;
         private bool _needToWriteEntryHeader;
         private string _name;
         private bool _DontIgnoreCase;
 #if !NETCF
-        internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
+        internal ParallelDeflateOutputStream ParallelDeflater;
         private long _ParallelDeflateThreshold;
         private int _maxBufferPairs = 16;
 #endif
@@ -1715,7 +1716,7 @@ namespace Ionic.Zip
         }
 
 #if !NETCF
-        public Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater
+        public ParallelDeflateOutputStream ParallelDeflater
         {
             get
             {
@@ -1758,7 +1759,7 @@ namespace Ionic.Zip
             }
         }
 
-        public Ionic.Zlib.CompressionStrategy Strategy
+        public CompressionStrategy Strategy
         {
             get
             {
@@ -1776,7 +1777,7 @@ namespace Ionic.Zip
             }
         }
 
-        public System.Text.Encoding AlternateEncoding
+        public Encoding AlternateEncoding
         {
             get
             {
@@ -1785,7 +1786,7 @@ namespace Ionic.Zip
                 return null;
             }
         }
-        public System.Text.Encoding DefaultEncoding
+        public Encoding DefaultEncoding
         {
             get
             {

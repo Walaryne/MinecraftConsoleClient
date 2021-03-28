@@ -1,9 +1,7 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-
 namespace Heijden.DNS
 {
 	#region Rfc 1034/1035
@@ -87,7 +85,7 @@ namespace Heijden.DNS
 			if (src == ".")
 				return new byte[1];
 
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			int intI, intJ, intLen = src.Length;
 			sb.Append('\0');
 			for (intI = 0, intJ = 0; intI < intLen; intI++, intJ++)
@@ -100,14 +98,14 @@ namespace Heijden.DNS
 				}
 			}
 			sb[sb.Length - 1] = '\0';
-			return System.Text.Encoding.ASCII.GetBytes(sb.ToString());
+			return Encoding.ASCII.GetBytes(sb.ToString());
 		}
 
 		public byte[] Data
 		{
 			get
 			{
-				List<byte> data = new List<byte>();
+				var data = new List<byte>();
 				data.AddRange(WriteName(QName));
 				data.AddRange(WriteShort((ushort)QType));
 				data.AddRange(WriteShort((ushort)QClass));

@@ -1,5 +1,4 @@
 using System;
-
 namespace Heijden.DNS
 {
 	/*
@@ -44,15 +43,14 @@ namespace Heijden.DNS
 
 		public int CompareTo(object objA)
 		{
-			RecordMX recordMX = objA as RecordMX;
+			var recordMX = objA as RecordMX;
 			if (recordMX == null)
 				return -1;
-			else if (this.PREFERENCE > recordMX.PREFERENCE)
+			if (PREFERENCE > recordMX.PREFERENCE)
 				return 1;
-			else if (this.PREFERENCE < recordMX.PREFERENCE)
+			if (PREFERENCE < recordMX.PREFERENCE)
 				return -1;
-			else // they are the same, now compare case insensitive names
-				return string.Compare(this.EXCHANGE, recordMX.EXCHANGE, true);
+			return string.Compare(EXCHANGE, recordMX.EXCHANGE, true);
 		}
 
 	}

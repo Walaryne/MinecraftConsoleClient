@@ -1,4 +1,4 @@
-using System;
+
 /*
 3.3.4. MD RDATA format (Obsolete)
 

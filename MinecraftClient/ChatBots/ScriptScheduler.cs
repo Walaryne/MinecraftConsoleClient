@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Globalization;
-
+using System.IO;
+using System.Text;
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -14,18 +13,18 @@ namespace MinecraftClient.ChatBots
     {
         private class TaskDesc
         {
-            public string action = null;
-            public bool triggerOnFirstLogin = false;
-            public bool triggerOnLogin = false;
-            public bool triggerOnTime = false;
-            public bool triggerOnInterval = false;
-            public int triggerOnInterval_Interval = 0;
-            public int triggerOnInterval_Interval_Countdown = 0;
+            public string action;
+            public bool triggerOnFirstLogin;
+            public bool triggerOnLogin;
+            public bool triggerOnTime;
+            public bool triggerOnInterval;
+            public int triggerOnInterval_Interval;
+            public int triggerOnInterval_Interval_Countdown;
             public List<DateTime> triggerOnTime_Times = new List<DateTime>();
-            public bool triggerOnTime_alreadyTriggered = false;
+            public bool triggerOnTime_alreadyTriggered;
         }
 
-        private static bool firstlogin_done = false;
+        private static bool firstlogin_done;
 
         private string tasksfile;
         private bool serverlogin_done;
@@ -42,11 +41,11 @@ namespace MinecraftClient.ChatBots
         public override void Initialize()
         {
             //Load the given file from the startup parameters
-            if (System.IO.File.Exists(tasksfile))
+            if (File.Exists(tasksfile))
             {
-                LogDebugToConsoleTranslated("bot.scriptScheduler.loading", System.IO.Path.GetFullPath(tasksfile));
+                LogDebugToConsoleTranslated("bot.scriptScheduler.loading", Path.GetFullPath(tasksfile));
                 TaskDesc current_task = null;
-                String[] lines = System.IO.File.ReadAllLines(tasksfile, Encoding.UTF8);
+                String[] lines = File.ReadAllLines(tasksfile, Encoding.UTF8);
                 foreach (string lineRAW in lines)
                 {
                     string line = lineRAW.Split('#')[0].Trim();
@@ -75,7 +74,7 @@ namespace MinecraftClient.ChatBots
                                     case "triggerontime": current_task.triggerOnTime = Settings.str2bool(argValue); break;
                                     case "triggeroninterval": current_task.triggerOnInterval = Settings.str2bool(argValue); break;
                                     case "timevalue": try { current_task.triggerOnTime_Times.Add(DateTime.ParseExact(argValue, "HH:mm", CultureInfo.InvariantCulture)); } catch { } break;
-                                    case "timeinterval": int interval = 1; int.TryParse(argValue, out interval); current_task.triggerOnInterval_Interval = interval; break;
+                                    case "timeinterval": var interval = 1; int.TryParse(argValue, out interval); current_task.triggerOnInterval_Interval = interval; break;
                                     case "script": current_task.action = "script " + argValue; break; //backward compatibility with older tasks.ini
                                     case "action": current_task.action = argValue; break;
                                 }
@@ -87,7 +86,7 @@ namespace MinecraftClient.ChatBots
             }
             else
             {
-                LogToConsoleTranslated("bot.scriptScheduler.not_found", System.IO.Path.GetFullPath(tasksfile));
+                LogToConsoleTranslated("bot.scriptScheduler.not_found", Path.GetFullPath(tasksfile));
                 UnloadBot(); //No need to keep the bot active
             }
         }
@@ -134,7 +133,7 @@ namespace MinecraftClient.ChatBots
                     {
                         if (task.triggerOnTime)
                         {
-                            bool matching_time_found = false;
+                            var matching_time_found = false;
                             
                             foreach (DateTime time in task.triggerOnTime_Times)
                             {

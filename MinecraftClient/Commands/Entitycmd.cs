@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using MinecraftClient.Inventory;
 using MinecraftClient.Mapping;
-
 namespace MinecraftClient.Commands
 {
     class Entitycmd : Command
@@ -21,7 +19,7 @@ namespace MinecraftClient.Commands
                 {
                     try
                     {
-                        int entityID = 0;
+                        var entityID = 0;
                         int.TryParse(args[0], out entityID);
                         if (entityID != 0)
                         {
@@ -50,7 +48,7 @@ namespace MinecraftClient.Commands
                                         EntityType type = entity.Type;
                                         double distance = Math.Round(entity.Location.Distance(handler.GetCurrentLocation()), 2);
 
-                                        string color = "§a"; // Green
+                                        var color = "§a"; // Green
                                         if (health < 10)
                                             color = "§c";  // Red
                                         else if (health < 15)
@@ -64,7 +62,7 @@ namespace MinecraftClient.Commands
                                             done += Translations.Replace("\n [MCC] ([cmd.entityCmd.customname]): {0}§8", customname.Replace("&", "§"));
                                         if (type == EntityType.Player)
                                             done += Translations.Replace("\n [MCC] ([cmd.entityCmd.latency]): {0}", latency);
-                                        else if (type == EntityType.Item || type == EntityType.ItemFrame || type == Mapping.EntityType.EyeOfEnder || type == Mapping.EntityType.Egg || type == Mapping.EntityType.EnderPearl || type == Mapping.EntityType.Potion || type == Mapping.EntityType.Fireball || type == Mapping.EntityType.FireworkRocket)
+                                        else if (type == EntityType.Item || type == EntityType.ItemFrame || type == EntityType.EyeOfEnder || type == EntityType.Egg || type == EntityType.EnderPearl || type == EntityType.Potion || type == EntityType.Fireball || type == EntityType.FireworkRocket)
                                         {
                                             string displayName = item.DisplayName;
                                             if (String.IsNullOrEmpty(displayName))
@@ -96,72 +94,66 @@ namespace MinecraftClient.Commands
                                         return done;
                                 }
                             }
-                            else return Translations.Get("cmd.entityCmd.not_found");
+                            return Translations.Get("cmd.entityCmd.not_found");
                         }
-                        else
+                        var interacttype = EntityType.Player;
+                        Enum.TryParse(args[0], out interacttype);
+                        var actionst = "cmd.entityCmd.attacked";
+                        var actioncount = 0;
+                        foreach (var entity2 in handler.GetEntities())
                         {
-                            EntityType interacttype = EntityType.Player;
-                            Enum.TryParse(args[0], out interacttype);
-                            string actionst = "cmd.entityCmd.attacked";
-                            int actioncount = 0;
-                            foreach (var entity2 in handler.GetEntities())
+                            if (entity2.Value.Type == interacttype)
                             {
-                                if (entity2.Value.Type == interacttype)
-                                {
-                                    string action = args.Length > 1
+                                string action = args.Length > 1
                                     ? args[1].ToLower()
                                     : "list";
-                                    if (action == "attack")
-                                    {
-                                        handler.InteractEntity(entity2.Key, 1);
-                                        actionst = "cmd.entityCmd.attacked";
-                                        actioncount++;
-                                    }
-                                    else if (action == "use")
-                                    {
-                                        handler.InteractEntity(entity2.Key, 0);
-                                        actionst = "cmd.entityCmd.used";
-                                        actioncount++;
-                                    }
-                                    else return GetCmdDescTranslated();
+                                if (action == "attack")
+                                {
+                                    handler.InteractEntity(entity2.Key, 1);
+                                    actionst = "cmd.entityCmd.attacked";
+                                    actioncount++;
                                 }
+                                else if (action == "use")
+                                {
+                                    handler.InteractEntity(entity2.Key, 0);
+                                    actionst = "cmd.entityCmd.used";
+                                    actioncount++;
+                                }
+                                else return GetCmdDescTranslated();
                             }
-                            return actioncount + " " + Translations.Get(actionst);
                         }
+                        return actioncount + " " + Translations.Get(actionst);
                     }
                     catch (FormatException) { return GetCmdDescTranslated(); }
                 }
-                else
+                var entities = handler.GetEntities();
+                var response = new List<string>();
+                response.Add(Translations.Get("cmd.entityCmd.entities"));
+                foreach (var entity2 in entities)
                 {
-                    Dictionary<int, Entity> entities = handler.GetEntities();
-                    List<string> response = new List<string>();
-                    response.Add(Translations.Get("cmd.entityCmd.entities"));
-                    foreach (var entity2 in entities)
-                    {
-                        int id = entity2.Key;
-                        float health = entity2.Value.Health;
-                        int latency = entity2.Value.Latency;
-                        string nickname = entity2.Value.Name;
-                        string customname = entity2.Value.CustomName;
-                        EntityPose pose = entity2.Value.Pose;
-                        EntityType type = entity2.Value.Type;
-                        Item item = entity2.Value.Item;
-                        string location = String.Format("X:{0}, Y:{1}, Z:{2}", Math.Round(entity2.Value.Location.X, 2), Math.Round(entity2.Value.Location.Y, 2), Math.Round(entity2.Value.Location.Z, 2));
+                    int id = entity2.Key;
+                    float health = entity2.Value.Health;
+                    int latency = entity2.Value.Latency;
+                    string nickname = entity2.Value.Name;
+                    string customname = entity2.Value.CustomName;
+                    EntityPose pose = entity2.Value.Pose;
+                    EntityType type = entity2.Value.Type;
+                    Item item = entity2.Value.Item;
+                    string location = String.Format("X:{0}, Y:{1}, Z:{2}", Math.Round(entity2.Value.Location.X, 2), Math.Round(entity2.Value.Location.Y, 2), Math.Round(entity2.Value.Location.Z, 2));
 
-                        if (type == EntityType.Item || type == EntityType.ItemFrame || type == EntityType.EyeOfEnder || type == EntityType.Egg || type == EntityType.EnderPearl || type == EntityType.Potion || type == EntityType.Fireball || type == EntityType.FireworkRocket)
-                            response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.item]): {2}, ([cmd.entityCmd.location]): {3}", id, type, item.Type, location));
-                        else if (type == EntityType.Player && !String.IsNullOrEmpty(nickname))
-                            response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.nickname]): §8{2}§8, ([cmd.entityCmd.latency]): {3}, ([cmd.entityCmd.health]): {4}, ([cmd.entityCmd.pose]): {5}, ([cmd.entityCmd.location]): {6}", id, type, nickname, latency, health, pose, location));
-                        else if (type == EntityType.Player && !String.IsNullOrEmpty(customname))
-                            response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.customname]): §8{2}§8, ([cmd.entityCmd.latency]): {3}, ([cmd.entityCmd.health]): {4}, ([cmd.entityCmd.pose]): {5}, ([cmd.entityCmd.location]): {6}", id, type, customname.Replace("&", "§"), latency, health, pose, location));
-                        else
-                            response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.health]): {2}, ([cmd.entityCmd.location]): {3}", id, type, health, location));
-                    }
-                    response.Add(GetCmdDescTranslated());
-                    return String.Join("\n", response);
+                    if (type == EntityType.Item || type == EntityType.ItemFrame || type == EntityType.EyeOfEnder || type == EntityType.Egg || type == EntityType.EnderPearl || type == EntityType.Potion || type == EntityType.Fireball || type == EntityType.FireworkRocket)
+                        response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.item]): {2}, ([cmd.entityCmd.location]): {3}", id, type, item.Type, location));
+                    else if (type == EntityType.Player && !String.IsNullOrEmpty(nickname))
+                        response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.nickname]): §8{2}§8, ([cmd.entityCmd.latency]): {3}, ([cmd.entityCmd.health]): {4}, ([cmd.entityCmd.pose]): {5}, ([cmd.entityCmd.location]): {6}", id, type, nickname, latency, health, pose, location));
+                    else if (type == EntityType.Player && !String.IsNullOrEmpty(customname))
+                        response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.customname]): §8{2}§8, ([cmd.entityCmd.latency]): {3}, ([cmd.entityCmd.health]): {4}, ([cmd.entityCmd.pose]): {5}, ([cmd.entityCmd.location]): {6}", id, type, customname.Replace("&", "§"), latency, health, pose, location));
+                    else
+                        response.Add(Translations.Replace(" #{0}: ([cmd.entityCmd.type]): {1}, ([cmd.entityCmd.health]): {2}, ([cmd.entityCmd.location]): {3}", id, type, health, location));
                 }
+                response.Add(GetCmdDescTranslated());
+                return String.Join("\n", response);
             }
-            else return Translations.Get("extra.entity_required");
+            return Translations.Get("extra.entity_required");
         }
     }
 }

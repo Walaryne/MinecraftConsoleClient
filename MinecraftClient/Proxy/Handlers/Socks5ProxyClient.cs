@@ -24,12 +24,11 @@
  */
 
 using System;
-using System.Text;
+using System.ComponentModel;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
-using System.Globalization;
-using System.ComponentModel;
-
+using System.Text;
 namespace Starksoft.Net.Proxy
 {
     /// <summary>
@@ -335,7 +334,7 @@ namespace Starksoft.Net.Proxy
             //      | 1  |    1     | 1 to 255 |
             //      +----+----------+----------+
             
-            byte[] authRequest = new byte[4];
+            var authRequest = new byte[4];
             authRequest[0] = SOCKS5_VERSION_NUMBER;
             authRequest[1] = SOCKS5_AUTH_NUMBER_OF_AUTH_METHODS_SUPPORTED;
             authRequest[2] = SOCKS5_AUTH_METHOD_NO_AUTHENTICATION_REQUIRED; 
@@ -366,7 +365,7 @@ namespace Starksoft.Net.Proxy
             //   * X'FF' NO ACCEPTABLE METHODS
 
             //  receive the server response 
-            byte[] response = new byte[2];
+            var response = new byte[2];
             stream.Read(response, 0, response.Length);
 
             //  the first byte contains the socks version number (e.g. 5)
@@ -404,7 +403,7 @@ namespace Starksoft.Net.Proxy
 
                 // create a data structure (binary array) containing credentials
                 // to send to the proxy server which consists of clear username and password data
-                byte[] credentials = new byte[_proxyUserName.Length + _proxyPassword.Length + 3];
+                var credentials = new byte[_proxyUserName.Length + _proxyPassword.Length + 3];
                 
                 // for SOCKS5 username/password authentication the VER field must be set to 0x01
                 //  http://en.wikipedia.org/wiki/SOCKS
@@ -433,7 +432,7 @@ namespace Starksoft.Net.Proxy
                 stream.Write(credentials, 0, credentials.Length);
 
                 // read the response from the proxy server
-                byte[] crResponse = new byte[2];
+                var crResponse = new byte[2];
                 stream.Read(crResponse, 0, crResponse.Length);
 
                 // check to see if the proxy server accepted the credentials
@@ -476,7 +475,7 @@ namespace Starksoft.Net.Proxy
                     return IPAddress.Parse(host).GetAddressBytes();
                 case SOCKS5_ADDRTYPE_DOMAIN_NAME:
                     //  create a byte array to hold the host name bytes plus one byte to store the length
-                    byte[] bytes = new byte[host.Length + 1]; 
+                    var bytes = new byte[host.Length + 1]; 
                     //  if the address field contains a fully-qualified domain name.  The first
                     //  octet of the address field contains the number of octets of name that
                     //  follow, there is no terminating NUL octet.
@@ -490,7 +489,7 @@ namespace Starksoft.Net.Proxy
 
         private byte[] GetDestPortBytes(int value)
         {
-            byte[] array = new byte[2];
+            var array = new byte[2];
             array[0] = Convert.ToByte(value / 256);
             array[1] = Convert.ToByte(value % 256);
             return array;
@@ -526,7 +525,7 @@ namespace Starksoft.Net.Proxy
             // * DST.ADDR desired destination address
             // * DST.PORT desired destination port in network octet order            
 
-            byte[] request = new byte[4 + destAddr.Length + 2];
+            var request = new byte[4 + destAddr.Length + 2];
             request[0] = SOCKS5_VERSION_NUMBER;
             request[1] = command;
             request[2] = SOCKS5_RESERVED;
@@ -559,7 +558,7 @@ namespace Starksoft.Net.Proxy
             //* RSV RESERVED
             //* ATYP address itemType of following address
 
-            byte[] response = new byte[255];
+            var response = new byte[255];
             
             // read proxy server response
             stream.Read(response, 0, response.Length);
@@ -576,42 +575,42 @@ namespace Starksoft.Net.Proxy
             string proxyErrorText;
             byte replyCode = response[1];
             byte addrType = response[3];
-            string addr = "";
+            var addr = "";
             Int16 port = 0;
 
             switch (addrType)
             {
                 case SOCKS5_ADDRTYPE_DOMAIN_NAME:
-                    int addrLen = Convert.ToInt32(response[4]);
-                    byte[] addrBytes = new byte[addrLen];
-                    for (int i = 0; i < addrLen; i++)
+                    var addrLen = Convert.ToInt32(response[4]);
+                    var addrBytes = new byte[addrLen];
+                    for (var i = 0; i < addrLen; i++)
                         addrBytes[i] = response[i + 5];
-                    addr = System.Text.ASCIIEncoding.ASCII.GetString(addrBytes);
-                    byte[] portBytesDomain = new byte[2];
+                    addr = ASCIIEncoding.ASCII.GetString(addrBytes);
+                    var portBytesDomain = new byte[2];
                     portBytesDomain[0] = response[6 + addrLen];
                     portBytesDomain[1] = response[5 + addrLen];
                     port = BitConverter.ToInt16(portBytesDomain, 0); 
                     break;
 
                 case SOCKS5_ADDRTYPE_IPV4:
-                    byte[] ipv4Bytes = new byte[4];
-                    for (int i = 0; i < 4; i++)
+                    var ipv4Bytes = new byte[4];
+                    for (var i = 0; i < 4; i++)
                         ipv4Bytes[i] = response[i + 4];
-                    IPAddress ipv4 = new IPAddress(ipv4Bytes);
+                    var ipv4 = new IPAddress(ipv4Bytes);
                     addr = ipv4.ToString();
-                    byte[] portBytesIpv4 = new byte[2];
+                    var portBytesIpv4 = new byte[2];
                     portBytesIpv4[0] = response[9];
                     portBytesIpv4[1] = response[8];
                     port = BitConverter.ToInt16(portBytesIpv4, 0); 
                     break;
 
                 case SOCKS5_ADDRTYPE_IPV6:
-                    byte[] ipv6Bytes = new byte[16];
-                    for (int i = 0; i < 16; i++)
+                    var ipv6Bytes = new byte[16];
+                    for (var i = 0; i < 16; i++)
                         ipv6Bytes[i] = response[i + 4];
-                    IPAddress ipv6 = new IPAddress(ipv6Bytes);
+                    var ipv6 = new IPAddress(ipv6Bytes);
                     addr = ipv6.ToString();
-                    byte[] portBytesIpv6 = new byte[2];
+                    var portBytesIpv6 = new byte[2];
                     portBytesIpv6[0] = response[21];
                     portBytesIpv6[1] = response[20];
                     port = BitConverter.ToInt16(portBytesIpv6, 0); 
@@ -731,9 +730,9 @@ namespace Starksoft.Net.Proxy
 
             CreateAsyncWorker();
             _asyncWorker.WorkerSupportsCancellation = true;
-            _asyncWorker.DoWork += new DoWorkEventHandler(CreateConnectionAsync_DoWork);
-            _asyncWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(CreateConnectionAsync_RunWorkerCompleted);
-            Object[] args = new Object[2];
+            _asyncWorker.DoWork += CreateConnectionAsync_DoWork;
+            _asyncWorker.RunWorkerCompleted += CreateConnectionAsync_RunWorkerCompleted;
+            var args = new Object[2];
             args[0] = destinationHost;
             args[1] = destinationPort;
             _asyncWorker.RunWorkerAsync(args);
@@ -743,7 +742,7 @@ namespace Starksoft.Net.Proxy
         {
             try
             {
-                Object[] args = (Object[])e.Argument;
+                var args = (Object[])e.Argument;
                 e.Result = CreateConnection((string)args[0], (int)args[1]);
             }
             catch (Exception ex)

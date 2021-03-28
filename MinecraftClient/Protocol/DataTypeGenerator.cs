@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-
+using System.Linq;
 namespace MinecraftClient.Protocol
 {
     /// <summary>
@@ -22,9 +21,9 @@ namespace MinecraftClient.Protocol
         {
             Json.JSONData rawJson = Json.ParseJson(File.ReadAllText(registriesJsonFile));
             Json.JSONData rawRegistry = rawJson.Properties[jsonRegistryName].Properties["entries"];
-            Dictionary<int, string> registry = new Dictionary<int, string>();
+            var registry = new Dictionary<int, string>();
 
-            foreach (KeyValuePair<string, Json.JSONData> entry in rawRegistry.Properties)
+            foreach (var entry in rawRegistry.Properties)
             {
                 int entryId = int.Parse(entry.Value.Properties["protocol_id"].StringValue);
 
@@ -53,7 +52,7 @@ namespace MinecraftClient.Protocol
         /// <param name="enumNamespace">Output enum namespace, e.g. MinecraftClient.Inventory</param>
         public static void GenerateEnum(string registriesJsonFile, string jsonRegistryName, string outputEnum, string enumNamespace)
         {
-            List<string> outputEnumLines = new List<string>();
+            var outputEnumLines = new List<string>();
 
             outputEnumLines.AddRange(new[] {
                 "namespace " + enumNamespace,
@@ -62,8 +61,8 @@ namespace MinecraftClient.Protocol
                 "    {"
             });
 
-            Dictionary<int, string> registry = LoadRegistry(registriesJsonFile, jsonRegistryName);
-            foreach (KeyValuePair<int, string> entry in registry)
+            var registry = LoadRegistry(registriesJsonFile, jsonRegistryName);
+            foreach (var entry in registry)
                 outputEnumLines.Add("        " + entry.Value + " = " + entry.Key + ',');
 
             outputEnumLines.AddRange(new[] {
@@ -86,8 +85,8 @@ namespace MinecraftClient.Protocol
         /// <param name="paletteNamespace">Palette namespace, e.g. MinecraftClient.EntityPalettes</param>
         public static void GenerateEnumWithPalette(string registriesJsonFile, string jsonRegistryName, string outputEnum, string enumNamespace, string outputPalette, string paletteNamespace)
         {
-            List<string> outputEnumLines = new List<string>();
-            List<string> outputPaletteLines = new List<string>();
+            var outputEnumLines = new List<string>();
+            var outputPaletteLines = new List<string>();
 
             outputEnumLines.AddRange(new[] {
                 "namespace " + enumNamespace,
@@ -110,9 +109,9 @@ namespace MinecraftClient.Protocol
                 "        {",
             });
 
-            Dictionary<int, string> registry = LoadRegistry(registriesJsonFile, jsonRegistryName);
+            var registry = LoadRegistry(registriesJsonFile, jsonRegistryName);
 
-            foreach (KeyValuePair<int, string> entry in registry)
+            foreach (var entry in registry)
             {
                 outputEnumLines.Add("        " + entry.Value + ',');
                 outputPaletteLines.Add("            mappings[" + entry.Key + "] = " + outputEnum + "." + entry.Value + ";");

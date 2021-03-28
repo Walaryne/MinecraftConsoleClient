@@ -1,4 +1,4 @@
-using System;
+
 /*
 
  */
@@ -18,7 +18,7 @@ namespace Heijden.DNS
 
 		public override string ToString()
 		{
-			return string.Format("not-used");
+			return "not-used";
 		}
 
 	}

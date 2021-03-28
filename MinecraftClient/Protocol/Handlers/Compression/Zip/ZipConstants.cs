@@ -24,7 +24,6 @@
 // ------------------------------------------------------------------
 
 using System;
-
 namespace Ionic.Zip
 {
   static class ZipConstants

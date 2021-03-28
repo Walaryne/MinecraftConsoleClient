@@ -25,8 +25,7 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Runtime.InteropServices;
 #if !NETCF
 using System.Runtime.Serialization;
 #endif
@@ -48,7 +47,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000B")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d0000B")]
     public class BadPasswordException : ZipException
     {
         /// <summary>
@@ -95,7 +94,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000A")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d0000A")]
     public class BadReadException : ZipException
     {
         /// <summary>
@@ -142,7 +141,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00009")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d00009")]
     public class BadCrcException : ZipException
     {
         /// <summary>
@@ -179,7 +178,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00008")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d00008")]
     public class SfxGenerationException : ZipException
     {
         /// <summary>
@@ -217,7 +216,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00007")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d00007")]
     public class BadStateException : ZipException
     {
         /// <summary>
@@ -261,7 +260,7 @@ namespace Ionic.Zip
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00006")]
+    [Guid("ebc25cf6-9120-4283-b972-0e5520d00006")]
     public class ZipException : Exception
     {
         /// <summary>

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-
 namespace MinecraftClient
 {
     /// <summary>
@@ -36,7 +34,7 @@ namespace MinecraftClient
         public static Dictionary<string, Dictionary<string, string>> ParseFile(IEnumerable<string> lines, bool lowerCase = true)
         {
             var iniContents = new Dictionary<string, Dictionary<string, string>>();
-            string iniSection = "default";
+            var iniSection = "default";
             foreach (string lineRaw in lines)
             {
                 string line = lineRaw.Split('#')[0].Trim();
@@ -87,7 +85,7 @@ namespace MinecraftClient
         /// <returns>Lines of the INI file</returns>
         public static string[] Generate(Dictionary<string, Dictionary<string, string>> contents, string description = null, bool autoCase = true)
         {
-            List<string> lines = new List<string>();
+            var lines = new List<string>();
             if (!String.IsNullOrWhiteSpace(description))
                 lines.Add('#' + description);
             foreach (var section in contents)

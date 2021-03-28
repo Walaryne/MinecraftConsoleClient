@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
+using System.Drawing;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Net;
-using System.IO;
-using System.Drawing;
 using System.Windows.Forms;
-
 namespace MinecraftClient.WinAPI
 {
     /// <summary>
@@ -20,7 +16,7 @@ namespace MinecraftClient.WinAPI
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetConsoleIcon(IntPtr hIcon);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
 
         /// <summary>
@@ -32,9 +28,9 @@ namespace MinecraftClient.WinAPI
             SETICON = 0x0080,
         }
 
-        private static void SetWindowIcon(System.Drawing.Icon icon)
+        private static void SetWindowIcon(Icon icon)
         {
-            IntPtr mwHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+            IntPtr mwHandle = Process.GetCurrentProcess().MainWindowHandle;
             IntPtr result01 = SendMessage(mwHandle, (int)WinMessages.SETICON, 0, icon.Handle);
             IntPtr result02 = SendMessage(mwHandle, (int)WinMessages.SETICON, 1, icon.Handle);
         }
@@ -46,28 +42,28 @@ namespace MinecraftClient.WinAPI
         {
             if (!Program.isUsingMono) //Windows Only
             {
-                Thread t = new Thread(new ThreadStart(delegate
-                {
-                    HttpWebRequest httpWebRequest = (HttpWebRequest)HttpWebRequest.Create("https://minotar.net/helm/" + playerName + "/100.png");
-                    try
-                    {
-                        using (HttpWebResponse httpWebReponse = (HttpWebResponse)httpWebRequest.GetResponse())
-                        {
-                            try
-                            {
-                                Bitmap skin = new Bitmap(Image.FromStream(httpWebReponse.GetResponseStream())); //Read skin from network
-                                SetWindowIcon(Icon.FromHandle(skin.GetHicon())); // Windows 10+ (New console)
-                                SetConsoleIcon(skin.GetHicon()); // Windows 8 and lower (Older console)
-                            }
-                            catch (ArgumentException) { /* Invalid image in HTTP response */ }
-                        }
-                    }
-                    catch (WebException) //Skin not found? Reset to default icon
-                    {
-                        revertToMCCIcon();
-                    }
-                }
-                ));
+                var t = new Thread(new ThreadStart(delegate
+                                       {
+                                           var httpWebRequest = (HttpWebRequest)HttpWebRequest.Create("https://minotar.net/helm/" + playerName + "/100.png");
+                                           try
+                                           {
+                                               using (var httpWebReponse = (HttpWebResponse)httpWebRequest.GetResponse())
+                                               {
+                                                   try
+                                                   {
+                                                       var skin = new Bitmap(Image.FromStream(httpWebReponse.GetResponseStream())); //Read skin from network
+                                                       SetWindowIcon(Icon.FromHandle(skin.GetHicon())); // Windows 10+ (New console)
+                                                       SetConsoleIcon(skin.GetHicon()); // Windows 8 and lower (Older console)
+                                                   }
+                                                   catch (ArgumentException) { /* Invalid image in HTTP response */ }
+                                               }
+                                           }
+                                           catch (WebException) //Skin not found? Reset to default icon
+                                           {
+                                               revertToMCCIcon();
+                                           }
+                                       }
+                                   ));
                 t.Name = "Player skin icon setter";
                 t.Start();
             }
@@ -83,7 +79,7 @@ namespace MinecraftClient.WinAPI
                 try
                 {
                     //Icon defaultIcon = Icon.ExtractAssociatedIcon(Environment.SystemDirectory + "\\cmd.exe");
-                    Icon defaultIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                    var defaultIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
                     SetWindowIcon(Icon.FromHandle(defaultIcon.Handle)); // Windows 10+ (New console)
                     SetConsoleIcon(defaultIcon.Handle); // Windows 8 and lower (Older console)
                 }

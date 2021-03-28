@@ -49,7 +49,7 @@ namespace Heijden.DNS
 
 		public override string ToString()
 		{
-			DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+			var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
 			dateTime = dateTime.AddSeconds(TIMESIGNED);
 			string printDate = dateTime.ToShortDateString() + " " + dateTime.ToShortTimeString();
 			return string.Format("{0} {1} {2} {3} {4}",

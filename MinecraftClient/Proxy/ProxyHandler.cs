@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using Starksoft.Net.Proxy;
-
 namespace MinecraftClient.Proxy
 {
     /// <summary>
@@ -15,11 +10,11 @@ namespace MinecraftClient.Proxy
 
     public static class ProxyHandler
     {
-        public enum Type { HTTP, SOCKS4, SOCKS4a, SOCKS5 };
+        public enum Type { HTTP, SOCKS4, SOCKS4a, SOCKS5 }
 
         private static ProxyClientFactory factory = new ProxyClientFactory();
         private static IProxyClient proxy;
-        private static bool proxy_ok = false;
+        private static bool proxy_ok;
 
         /// <summary>
         /// Create a regular TcpClient or a proxied TcpClient according to the app Settings.
@@ -34,7 +29,7 @@ namespace MinecraftClient.Proxy
             {
                 if (login ? Settings.ProxyEnabledLogin : Settings.ProxyEnabledIngame)
                 {
-                    ProxyType innerProxytype = ProxyType.Http;
+                    var innerProxytype = ProxyType.Http;
 
                     switch (Settings.proxyType)
                     {
@@ -58,7 +53,7 @@ namespace MinecraftClient.Proxy
 
                     return proxy.CreateConnection(host, port);
                 }
-                else return new TcpClient(host, port);
+                return new TcpClient(host, port);
             }
             catch (ProxyException e)
             {

@@ -1,5 +1,3 @@
-using System;
-
 namespace Org.BouncyCastle.Crypto
 {
 	public abstract class BufferedCipherBase

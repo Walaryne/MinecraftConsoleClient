@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-
 namespace MinecraftClient
 {
     /// <summary>
@@ -30,7 +29,7 @@ namespace MinecraftClient
         /// <returns>True if the action finished whithout timing out</returns>
         public static bool Perform(Action action, TimeSpan timeout)
         {
-            Thread thread = new Thread(new ThreadStart(action));
+            var thread = new Thread(new ThreadStart(action));
             thread.Start();
             bool success = thread.Join(timeout);
             if (!success)

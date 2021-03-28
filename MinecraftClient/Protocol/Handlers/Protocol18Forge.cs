@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MinecraftClient.Protocol.Handlers.Forge;
 using System.Threading;
-
+using MinecraftClient.Protocol.Handlers.Forge;
 namespace MinecraftClient.Protocol.Handlers
 {
     /// <summary>
@@ -30,7 +29,7 @@ namespace MinecraftClient.Protocol.Handlers
         public Protocol18Forge(ForgeInfo forgeInfo, int protocolVersion, DataTypes dataTypes, Protocol18Handler protocol18, IMinecraftComHandler mcHandler)
         {
             this.forgeInfo = forgeInfo;
-            this.protocolversion = protocolVersion;
+            protocolversion = protocolVersion;
             this.dataTypes = dataTypes;
             this.protocol18 = protocol18;
             this.mcHandler = mcHandler;
@@ -57,7 +56,7 @@ namespace MinecraftClient.Protocol.Handlers
             if (ForgeEnabled() && forgeInfo.Version == FMLVersion.FML)
             {
                 int packetID = -1;
-                Queue<byte> packetData = new Queue<byte>();
+                var packetData = new Queue<byte>();
 
                 while (fmlHandshakeState != FMLHandshakeClientState.DONE)
                 {
@@ -68,11 +67,8 @@ namespace MinecraftClient.Protocol.Handlers
                         mcHandler.OnConnectionLost(ChatBot.DisconnectReason.LoginRejected, ChatParser.ParseText(dataTypes.ReadNextString(packetData)));
                         return false;
                     }
-                    else
-                    {
-                        // Send back regular packet to the vanilla protocol handler
-                        protocol18.HandlePacket(packetID, packetData);
-                    }
+                    // Send back regular packet to the vanilla protocol handler
+                    protocol18.HandlePacket(packetID, packetData);
                 }
             }
             return true;
@@ -88,13 +84,10 @@ namespace MinecraftClient.Protocol.Handlers
             if (ForgeEnabled())
             {
                 // Forge special VarShort field.
-                return (int)dataTypes.ReadNextVarShort(packetData);
+                return dataTypes.ReadNextVarShort(packetData);
             }
-            else
-            {
-                // Vanilla regular Short field
-                return (int)dataTypes.ReadNextShort(packetData);
-            }
+            // Vanilla regular Short field
+            return dataTypes.ReadNextShort(packetData);
         }
 
         /// <summary>
@@ -110,7 +103,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 if (channel == "FML|HS")
                 {
-                    FMLHandshakeDiscriminator discriminator = (FMLHandshakeDiscriminator)dataTypes.ReadNextByte(packetData);
+                    var discriminator = (FMLHandshakeDiscriminator)dataTypes.ReadNextByte(packetData);
 
                     if (discriminator == FMLHandshakeDiscriminator.HandshakeReset)
                     {
@@ -140,13 +133,13 @@ namespace MinecraftClient.Protocol.Handlers
                                 currentDimension = dataTypes.ReadNextInt(packetData);
 
                             // Tell the server we're running the same version.
-                            SendForgeHandshakePacket(FMLHandshakeDiscriminator.ClientHello, new byte[] { fmlProtocolVersion });
+                            SendForgeHandshakePacket(FMLHandshakeDiscriminator.ClientHello, new[] { fmlProtocolVersion });
 
                             // Then tell the server that we're running the same mods.
                             if (Settings.DebugMessages)
                                 Translations.WriteLineFormatted("forge.send_mod");
-                            byte[][] mods = new byte[forgeInfo.Mods.Count][];
-                            for (int i = 0; i < forgeInfo.Mods.Count; i++)
+                            var mods = new byte[forgeInfo.Mods.Count][];
+                            for (var i = 0; i < forgeInfo.Mods.Count; i++)
                             {
                                 ForgeInfo.ForgeMod mod = forgeInfo.Mods[i];
                                 mods[i] = dataTypes.ConcatBytes(dataTypes.GetString(mod.ModID), dataTypes.GetString(mod.Version));
@@ -169,7 +162,7 @@ namespace MinecraftClient.Protocol.Handlers
                             // even though we don't actually care what mods it has.
 
                             SendForgeHandshakePacket(FMLHandshakeDiscriminator.HandshakeAck,
-                                new byte[] { (byte)FMLHandshakeClientState.WAITINGSERVERDATA });
+                                new[] { (byte)FMLHandshakeClientState.WAITINGSERVERDATA });
 
                             fmlHandshakeState = FMLHandshakeClientState.WAITINGSERVERCOMPLETE;
                             return false;
@@ -212,7 +205,7 @@ namespace MinecraftClient.Protocol.Handlers
                             if (Settings.DebugMessages)
                                 Translations.WriteLineFormatted("forge.accept_registry");
                             SendForgeHandshakePacket(FMLHandshakeDiscriminator.HandshakeAck,
-                                new byte[] { (byte)FMLHandshakeClientState.PENDINGCOMPLETE });
+                                new[] { (byte)FMLHandshakeClientState.PENDINGCOMPLETE });
                             fmlHandshakeState = FMLHandshakeClientState.COMPLETE;
 
                             return true;
@@ -222,7 +215,7 @@ namespace MinecraftClient.Protocol.Handlers
                             // we don't need to do that.
 
                             SendForgeHandshakePacket(FMLHandshakeDiscriminator.HandshakeAck,
-                                new byte[] { (byte)FMLHandshakeClientState.COMPLETE });
+                                new[] { (byte)FMLHandshakeClientState.COMPLETE });
                             if (Settings.DebugMessages)
                                 Translations.WriteLine("forge.complete");
                             fmlHandshakeState = FMLHandshakeClientState.DONE;
@@ -285,8 +278,8 @@ namespace MinecraftClient.Protocol.Handlers
 
                 if (fmlChannel == "fml:handshake")
                 {
-                    bool fmlResponseReady = false;
-                    List<byte> fmlResponsePacket = new List<byte>();
+                    var fmlResponseReady = false;
+                    var fmlResponsePacket = new List<byte>();
 
                     switch (packetID)
                     {
@@ -306,19 +299,19 @@ namespace MinecraftClient.Protocol.Handlers
                             if (Settings.DebugMessages)
                                 Translations.WriteLineFormatted("forge.fml2.mod");
 
-                            List<string> mods = new List<string>();
+                            var mods = new List<string>();
                             int modCount = dataTypes.ReadNextVarInt(packetData);
-                            for (int i = 0; i < modCount; i++)
+                            for (var i = 0; i < modCount; i++)
                                 mods.Add(dataTypes.ReadNextString(packetData));
 
-                            Dictionary<string, string> channels = new Dictionary<string, string>();
+                            var channels = new Dictionary<string, string>();
                             int channelCount = dataTypes.ReadNextVarInt(packetData);
-                            for (int i = 0; i < channelCount; i++)
+                            for (var i = 0; i < channelCount; i++)
                                 channels.Add(dataTypes.ReadNextString(packetData), dataTypes.ReadNextString(packetData));
 
-                            List<string> registries = new List<string>();
+                            var registries = new List<string>();
                             int registryCount = dataTypes.ReadNextVarInt(packetData);
-                            for (int i = 0; i < registryCount; i++)
+                            for (var i = 0; i < registryCount; i++)
                                 registries.Add(dataTypes.ReadNextString(packetData));
 
                             // Server Mod List Reply: FMLHandshakeMessages.java > C2SModListReply > encode()
@@ -345,7 +338,7 @@ namespace MinecraftClient.Protocol.Handlers
                                 fmlResponsePacket.AddRange(dataTypes.GetString(mod));
 
                             fmlResponsePacket.AddRange(dataTypes.GetVarInt(channels.Count));
-                            foreach (KeyValuePair<string, string> item in channels)
+                            foreach (var item in channels)
                             {
                                 fmlResponsePacket.AddRange(dataTypes.GetString(item.Key));
                                 fmlResponsePacket.AddRange(dataTypes.GetString(item.Value));
@@ -431,7 +424,7 @@ namespace MinecraftClient.Protocol.Handlers
         /// <param name="data">packet Data</param>
         private void SendForgeHandshakePacket(FMLHandshakeDiscriminator discriminator, byte[] data)
         {
-            protocol18.SendPluginChannelPacket("FML|HS", dataTypes.ConcatBytes(new byte[] { (byte)discriminator }, data));
+            protocol18.SendPluginChannelPacket("FML|HS", dataTypes.ConcatBytes(new[] { (byte)discriminator }, data));
         }
 
         /// <summary>
@@ -467,7 +460,7 @@ namespace MinecraftClient.Protocol.Handlers
             {
                 return new ForgeInfo(FMLVersion.FML2);
             }
-            else throw new InvalidOperationException(Translations.Get("error.forgeforce"));
+            throw new InvalidOperationException(Translations.Get("error.forgeforce"));
         }
 
         /// <summary>
@@ -512,15 +505,12 @@ namespace MinecraftClient.Protocol.Handlers
                         {
                             Translations.WriteLineFormatted("forge.mod_list");
                             foreach (ForgeInfo.ForgeMod mod in forgeInfo.Mods)
-                                ConsoleIO.WriteLineFormatted("§8  " + mod.ToString());
+                                ConsoleIO.WriteLineFormatted("§8  " + mod);
                         }
                         return true;
                     }
-                    else
-                    {
-                        Translations.WriteLineFormatted("forge.no_mod");
-                        forgeInfo = null;
-                    }
+                    Translations.WriteLineFormatted("forge.no_mod");
+                    forgeInfo = null;
                 }
             }
             return false;

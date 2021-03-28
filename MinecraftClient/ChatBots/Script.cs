@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
-using Microsoft.CSharp;
-using System.CodeDom.Compiler;
-using System.Reflection;
-using System.Diagnostics;
-
 namespace MinecraftClient.ChatBots
 {
     /// <summary>
@@ -20,7 +17,7 @@ namespace MinecraftClient.ChatBots
         private string[] lines = new string[0];
         private string[] args = new string[0];
         private int sleepticks = 10;
-        private int nextline = 0;
+        private int nextline;
         private string owner;
         private bool csharp;
         private Thread thread;
@@ -35,17 +32,17 @@ namespace MinecraftClient.ChatBots
         public Script(string filename, string ownername, Dictionary<string, object> localVars)
             : this(filename)
         {
-            this.owner = ownername;
+            owner = ownername;
             this.localVars = localVars;
         }
 
         private void ParseArguments(string argstr)
         {
-            List<string> args = new List<string>();
-            StringBuilder str = new StringBuilder();
+            var args = new List<string>();
+            var str = new StringBuilder();
 
-            bool escape = false;
-            bool quotes = false;
+            var escape = false;
+            var quotes = false;
 
             foreach (char c in argstr)
             {
@@ -88,8 +85,7 @@ namespace MinecraftClient.ChatBots
         {
             //Automatically look in subfolders and try to add ".txt" file extension
             char dir_slash = Program.isUsingMono ? '/' : '\\';
-            string[] files = new string[]
-            {
+            string[] files = {
                 filename,
                 filename + ".txt",
                 filename + ".cs",
@@ -103,7 +99,7 @@ namespace MinecraftClient.ChatBots
 
             foreach (string possible_file in files)
             {
-                if (System.IO.File.Exists(possible_file))
+                if (File.Exists(possible_file))
                 {
                     filename = possible_file;
                     return true;
@@ -112,10 +108,10 @@ namespace MinecraftClient.ChatBots
 
             if (Settings.DebugMessages)
             {
-                string caller = "Script";
+                var caller = "Script";
                 try
                 {
-                    StackFrame frame = new StackFrame(1);
+                    var frame = new StackFrame(1);
                     MethodBase method = frame.GetMethod();
                     Type type = method.DeclaringType;
                     caller = type.Name;
@@ -132,7 +128,7 @@ namespace MinecraftClient.ChatBots
             //Load the given file from the startup parameters
             if (LookForScript(ref file))
             {
-                lines = System.IO.File.ReadAllLines(file, Encoding.UTF8);
+                lines = File.ReadAllLines(file, Encoding.UTF8);
                 csharp = file.EndsWith(".cs");
                 thread = null;
 
@@ -141,7 +137,7 @@ namespace MinecraftClient.ChatBots
             }
             else
             {
-                LogToConsoleTranslated("bot.script.file_not_found", System.IO.Path.GetFullPath(file));
+                LogToConsoleTranslated("bot.script.file_not_found", Path.GetFullPath(file));
 
                 if (!String.IsNullOrEmpty(owner))
                     SendPrivateMessage(owner, Translations.Get("bot.script.file_not_found", file));
@@ -204,7 +200,7 @@ namespace MinecraftClient.ChatBots
                                 switch (instruction_name.ToLower())
                                 {
                                     case "wait":
-                                        int ticks = 10;
+                                        var ticks = 10;
                                         try
                                         {
                                             ticks = Convert.ToInt32(instruction_line.Substring(5, instruction_line.Length - 5));

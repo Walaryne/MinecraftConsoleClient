@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Text;
-
 namespace MinecraftClient
 {
     /// <summary>
@@ -16,7 +15,7 @@ namespace MinecraftClient
         /// </summary>
         public static JSONData ParseJson(string json)
         {
-            int cursorpos = 0;
+            var cursorpos = 0;
             return String2Data(json, ref cursorpos);
         }
 
@@ -26,7 +25,7 @@ namespace MinecraftClient
         /// </summary>
         public class JSONData
         {
-            public enum DataType { Object, Array, String };
+            public enum DataType { Object, Array, String }
             private DataType type;
             public DataType Type { get { return type; } }
             public Dictionary<string, JSONData> Properties;
@@ -64,7 +63,7 @@ namespace MinecraftClient
                             if (toparse[cursorpos] == '"')
                             {
                                 JSONData propertyname = String2Data(toparse, ref cursorpos);
-                                if (toparse[cursorpos] == ':') { cursorpos++; } else { /* parse error ? */ }
+                                if (toparse[cursorpos] == ':') { cursorpos++; }
                                 JSONData propertyData = String2Data(toparse, ref cursorpos);
                                 data.Properties[propertyname.StringValue] = propertyData;
                             }
@@ -104,28 +103,28 @@ namespace MinecraftClient
                                         && IsHex(toparse[cursorpos + 5]))
                                     {
                                         //"abc\u0123abc" => "0123" => 0123 => Unicode char n°0123 => Add char to string
-                                        data.StringValue += char.ConvertFromUtf32(int.Parse(toparse.Substring(cursorpos + 2, 4), System.Globalization.NumberStyles.HexNumber));
+                                        data.StringValue += char.ConvertFromUtf32(int.Parse(toparse.Substring(cursorpos + 2, 4), NumberStyles.HexNumber));
                                         cursorpos += 6; continue;
                                     }
-                                    else if (toparse[cursorpos + 1] == 'n')
+                                    if (toparse[cursorpos + 1] == 'n')
                                     {
                                         data.StringValue += '\n';
                                         cursorpos += 2;
                                         continue;
                                     }
-                                    else if (toparse[cursorpos + 1] == 'r')
+                                    if (toparse[cursorpos + 1] == 'r')
                                     {
                                         data.StringValue += '\r';
                                         cursorpos += 2;
                                         continue;
                                     }
-                                    else if (toparse[cursorpos + 1] == 't')
+                                    if (toparse[cursorpos + 1] == 't')
                                     {
                                         data.StringValue += '\t';
                                         cursorpos += 2;
                                         continue;
                                     }
-                                    else cursorpos++; //Normal character escapement \"
+                                    cursorpos++;      //Normal character escapement \"
                                 }
                                 catch (IndexOutOfRangeException) { cursorpos++; } // \u01<end of string>
                                 catch (ArgumentOutOfRangeException) { cursorpos++; } // Unicode index 0123 was invalid
@@ -139,7 +138,7 @@ namespace MinecraftClient
                     //Number
                     case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '.':
                         data = new JSONData(JSONData.DataType.String);
-                        StringBuilder sb = new StringBuilder();
+                        var sb = new StringBuilder();
                         while ((toparse[cursorpos] >= '0' && toparse[cursorpos] <= '9') || toparse[cursorpos] == '.')
                         {
                             sb.Append(toparse[cursorpos]);

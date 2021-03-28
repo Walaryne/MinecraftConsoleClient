@@ -1,8 +1,4 @@
 using System;
-using System.Diagnostics;
-
-using Org.BouncyCastle.Crypto.Parameters;
-
 namespace Org.BouncyCastle.Crypto
 {
 	/**
@@ -157,7 +153,7 @@ namespace Org.BouncyCastle.Crypto
 
 			if (outLength > 0 && pos < outLength)
 			{
-				byte[] tmp = new byte[pos];
+				var tmp = new byte[pos];
 				Array.Copy(outBytes, 0, tmp, 0, pos);
 				outBytes = tmp;
 			}
@@ -183,7 +179,7 @@ namespace Org.BouncyCastle.Crypto
 
 			if (outLength > 0 && pos < outLength)
 			{
-				byte[] tmp = new byte[pos];
+				var tmp = new byte[pos];
 				Array.Copy(outBytes, 0, tmp, 0, pos);
 				outBytes = tmp;
 			}
@@ -226,7 +222,7 @@ namespace Org.BouncyCastle.Crypto
                 Check.OutputLength(output, outOff, outLength, "output buffer too short");
 			}
 
-            int resultLen = 0;
+            var resultLen = 0;
 			int gapLen = buf.Length - bufOff;
 			if (length > gapLen)
 			{
@@ -264,7 +260,7 @@ namespace Org.BouncyCastle.Crypto
 				int pos = DoFinal(outBytes, 0);
 				if (pos < outBytes.Length)
 				{
-					byte[] tmp = new byte[pos];
+					var tmp = new byte[pos];
 					Array.Copy(outBytes, 0, tmp, 0, pos);
 					outBytes = tmp;
 				}
@@ -301,7 +297,7 @@ namespace Org.BouncyCastle.Crypto
 
 				if (pos < outBytes.Length)
 				{
-					byte[] tmp = new byte[pos];
+					var tmp = new byte[pos];
 					Array.Copy(outBytes, 0, tmp, 0, pos);
 					outBytes = tmp;
 				}

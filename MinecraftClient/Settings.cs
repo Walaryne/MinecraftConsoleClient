@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
 using System.Text.RegularExpressions;
-using MinecraftClient.Protocol.Session;
+using MinecraftClient.ChatBots;
 using MinecraftClient.Protocol;
-
+using MinecraftClient.Protocol.Session;
+using MinecraftClient.Proxy;
 namespace MinecraftClient
 {
     /// <summary>
@@ -29,35 +30,35 @@ namespace MinecraftClient
         public static string ServerIP = "";
         public static ushort ServerPort = 25565;
         public static string ServerVersion = "";
-        public static bool ServerForceForge = false;
+        public static bool ServerForceForge;
         public static bool ServerAutodetectForge = true;
         public static string SingleCommand = "";
         public static string ConsoleTitle = "";
 
         //Proxy Settings
-        public static bool ProxyEnabledLogin = false;
-        public static bool ProxyEnabledIngame = false;
+        public static bool ProxyEnabledLogin;
+        public static bool ProxyEnabledIngame;
         public static string ProxyHost = "";
-        public static int ProxyPort = 0;
-        public static Proxy.ProxyHandler.Type proxyType = Proxy.ProxyHandler.Type.HTTP;
+        public static int ProxyPort;
+        public static ProxyHandler.Type proxyType = ProxyHandler.Type.HTTP;
         public static string ProxyUsername = "";
         public static string ProxyPassword = "";
 
         //Minecraft Settings
         public static bool MCSettings_Enabled = true;
         public static string MCSettings_Locale = "en_US";
-        public static byte MCSettings_Difficulty = 0;
+        public static byte MCSettings_Difficulty;
         public static byte MCSettings_RenderDistance = 8;
-        public static byte MCSettings_ChatMode = 0;
+        public static byte MCSettings_ChatMode;
         public static bool MCSettings_ChatColors = true;
-        public static byte MCSettings_MainHand = 0;
+        public static byte MCSettings_MainHand;
         public static bool MCSettings_Skin_Hat = true;
         public static bool MCSettings_Skin_Cape = true;
-        public static bool MCSettings_Skin_Jacket = false;
-        public static bool MCSettings_Skin_Sleeve_Left = false;
-        public static bool MCSettings_Skin_Sleeve_Right = false;
-        public static bool MCSettings_Skin_Pants_Left = false;
-        public static bool MCSettings_Skin_Pants_Right = false;
+        public static bool MCSettings_Skin_Jacket;
+        public static bool MCSettings_Skin_Sleeve_Left;
+        public static bool MCSettings_Skin_Sleeve_Right;
+        public static bool MCSettings_Skin_Pants_Left;
+        public static bool MCSettings_Skin_Pants_Right;
         public static byte MCSettings_Skin_All
         {
             get
@@ -83,55 +84,55 @@ namespace MinecraftClient
         public static string Language = "en_GB";
         public static bool interactiveMode = true;
         public static char internalCmdChar = '/';
-        public static bool playerHeadAsIcon = false;
+        public static bool playerHeadAsIcon;
         public static string chatbotLogFile = "";
         public static bool CacheScripts = true;
         public static string BrandInfo = MCCBrandInfo;
         public static bool DisplaySystemMessages = true;
         public static bool DisplayXPBarMessages = true;
         public static bool DisplayChatLinks = true;
-        public static bool TerrainAndMovements = false;
-        public static bool InventoryHandling = false;
+        public static bool TerrainAndMovements;
+        public static bool InventoryHandling;
         public static string PrivateMsgsCmdName = "tell";
         public static CacheType SessionCaching = CacheType.Disk;
         public static bool ResolveSrvRecords = true;
         public static bool ResolveSrvRecordsShortTimeout = true;
-        public static bool EntityHandling = false;
-        public static bool AutoRespawn = false;
+        public static bool EntityHandling;
+        public static bool AutoRespawn;
 
         // Logging
         public enum FilterModeEnum { Blacklist, Whitelist }
-        public static bool DebugMessages = false;
+        public static bool DebugMessages;
         public static bool ChatMessages = true;
         public static bool InfoMessages = true;
         public static bool WarningMessages = true;
         public static bool ErrorMessages = true;
-        public static Regex ChatFilter = null;
-        public static Regex DebugFilter = null;
+        public static Regex ChatFilter;
+        public static Regex DebugFilter;
         public static FilterModeEnum FilterMode = FilterModeEnum.Blacklist;
 
         //AntiAFK Settings
-        public static bool AntiAFK_Enabled = false;
+        public static bool AntiAFK_Enabled;
         public static int AntiAFK_Delay = 600;
         public static string AntiAFK_Command = "/ping";
 
         //Hangman Settings
-        public static bool Hangman_Enabled = false;
+        public static bool Hangman_Enabled;
         public static bool Hangman_English = true;
         public static string Hangman_FileWords_EN = "hangman-en.txt";
         public static string Hangman_FileWords_FR = "hangman-fr.txt";
 
         //Alerts Settings
-        public static bool Alerts_Enabled = false;
+        public static bool Alerts_Enabled;
         public static bool Alerts_Beep_Enabled = true;
         public static string Alerts_MatchesFile = "alerts.txt";
         public static string Alerts_ExcludesFile = "alerts-exclude.txt";
 
         //ChatLog Settings
-        public static bool ChatLog_Enabled = false;
+        public static bool ChatLog_Enabled;
         public static bool ChatLog_DateTime = true;
         public static string ChatLog_File = "chatlog.txt";
-        public static ChatBots.ChatLog.MessageFilter ChatLog_Filter = ChatBots.ChatLog.MessageFilter.AllMessages;
+        public static ChatLog.MessageFilter ChatLog_Filter = ChatLog.MessageFilter.AllMessages;
 
         //PlayerListLog Settings
         public static bool PlayerLog_Enabled = false;
@@ -139,66 +140,70 @@ namespace MinecraftClient
         public static int PlayerLog_Delay = 600;
 
         //AutoRelog Settings
-        public static bool AutoRelog_Enabled = false;
+        public static bool AutoRelog_Enabled;
         public static int AutoRelog_Delay_Min = 10;
         public static int AutoRelog_Delay_Max = 10;
         public static int AutoRelog_Retries = 3;
-        public static bool AutoRelog_IgnoreKickMessage = false;
+        public static bool AutoRelog_IgnoreKickMessage;
         public static string AutoRelog_KickMessagesFile = "kickmessages.txt";
 
         //Script Scheduler Settings
-        public static bool ScriptScheduler_Enabled = false;
+        public static bool ScriptScheduler_Enabled;
         public static string ScriptScheduler_TasksFile = "tasks.ini";
 
         //Remote Control
-        public static bool RemoteCtrl_Enabled = false;
+        public static bool RemoteCtrl_Enabled;
         public static bool RemoteCtrl_AutoTpaccept = true;
-        public static bool RemoteCtrl_AutoTpaccept_Everyone = false;
+        public static bool RemoteCtrl_AutoTpaccept_Everyone;
 
         //Chat Message Parsing
         public static bool ChatFormat_Builtins = true;
-        public static Regex ChatFormat_Public = null;
-        public static Regex ChatFormat_Private = null;
-        public static Regex ChatFormat_TeleportRequest = null;
+        public static Regex ChatFormat_Public;
+        public static Regex ChatFormat_Private;
+        public static Regex ChatFormat_TeleportRequest;
 
         //Auto Respond
-        public static bool AutoRespond_Enabled = false;
+        public static bool AutoRespond_Enabled;
         public static string AutoRespond_Matches = "matches.ini";
 
         //Auto Attack
-        public static bool AutoAttack_Enabled = false;
+        public static bool AutoAttack_Enabled;
         public static string AutoAttack_Mode = "single";
         public static string AutoAttack_Priority = "distance";
 
         //Auto Fishing
-        public static bool AutoFishing_Enabled = false;
-        public static bool AutoFishing_Antidespawn = false;
+        public static bool AutoFishing_Enabled;
+        public static bool AutoFishing_Antidespawn;
 
         //Auto Eating
-        public static bool AutoEat_Enabled = false;
+        public static bool AutoEat_Enabled;
         public static int AutoEat_hungerThreshold = 6;
 
         //AutoCraft
-        public static bool AutoCraft_Enabled = false;
+        public static bool AutoCraft_Enabled;
         public static string AutoCraft_configFile = @"autocraft\config.ini";
         
         //Mailer
-        public static bool Mailer_Enabled = false;
+        public static bool Mailer_Enabled;
         public static string Mailer_DatabaseFile = "MailerDatabase.ini";
         public static string Mailer_IgnoreListFile = "MailerIgnoreList.ini";
-        public static bool Mailer_PublicInteractions = false;
+        public static bool Mailer_PublicInteractions;
         public static int Mailer_MaxMailsPerPlayer = 10;
         public static int Mailer_MaxDatabaseSize = 10000;
         public static int Mailer_MailRetentionDays = 30;
 
         //AutoDrop
-        public static bool AutoDrop_Enabled = false;
+        public static bool AutoDrop_Enabled;
         public static string AutoDrop_Mode = "include";
         public static string AutoDrop_items = "";
 
         // Replay Mod
-        public static bool ReplayMod_Enabled = false;
+        public static bool ReplayMod_Enabled;
         public static int ReplayMod_BackupInterval = 3000;
+
+        //AutoLogout
+        public static bool AutoLogout_Enabled;
+        public static int AutoLogout_hpThreshold = 5;
 
 
         //Custom app variables and Minecraft accounts
@@ -207,7 +212,7 @@ namespace MinecraftClient
         private static readonly Dictionary<string, KeyValuePair<string, ushort>> Servers = new Dictionary<string, KeyValuePair<string, ushort>>();
 
 
-        private enum ParseMode { Default, Main, AppVars, Proxy, MCSettings, AntiAFK, Hangman, Alerts, ChatLog, AutoRelog, ScriptScheduler, RemoteControl, ChatFormat, AutoRespond, AutoAttack, AutoFishing, AutoEat, AutoCraft, AutoDrop, Mailer, ReplayMod, Logging };
+        private enum ParseMode { Default, Main, AppVars, Proxy, MCSettings, AntiAFK, Hangman, Alerts, ChatLog, AutoRelog, AutoLogout, ScriptScheduler, RemoteControl, ChatFormat, AutoRespond, AutoAttack, AutoFishing, AutoEat, AutoCraft, AutoDrop, Mailer, ReplayMod, Logging }
 
 
         /// <summary>
@@ -221,9 +226,9 @@ namespace MinecraftClient
             {
                 try
                 {
-                    string serverAlias = "";
+                    var serverAlias = "";
                     string[] Lines = File.ReadAllLines(settingsfile);
-                    ParseMode pMode = ParseMode.Default;
+                    var pMode = ParseMode.Default;
                     foreach (string lineRAW in Lines)
                     {
                         string line = pMode == ParseMode.Main && lineRAW.ToLower().Trim().StartsWith("password")
@@ -257,6 +262,7 @@ namespace MinecraftClient
                                     case "autodrop": pMode = ParseMode.AutoDrop; break;
                                     case "replaymod": pMode = ParseMode.ReplayMod; break;
                                     case "logging": pMode = ParseMode.Logging; break;
+                                    case "autologout": pMode = ParseMode.AutoLogout; break;
 
                                     default: pMode = ParseMode.Default; break;
                                 }
@@ -338,7 +344,7 @@ namespace MinecraftClient
                                                         }
 
                                                         //Try user value against aliases after load
-                                                        Settings.SetAccount(Login);
+                                                        SetAccount(Login);
                                                     }
                                                     break;
 
@@ -470,12 +476,20 @@ namespace MinecraftClient
                                             }
                                             break;
 
+                                        case ParseMode.AutoLogout:
+                                            switch (argName.ToLower())
+                                            {
+                                                case "enabled": AutoLogout_Enabled = str2bool(argValue); break;
+                                                case "threshold": AutoLogout_hpThreshold = str2int(argValue); break;
+                                            }
+                                            break;
+
                                         case ParseMode.ChatLog:
                                             switch (argName.ToLower())
                                             {
                                                 case "enabled": ChatLog_Enabled = str2bool(argValue); break;
                                                 case "timestamps": ChatLog_DateTime = str2bool(argValue); break;
-                                                case "filter": ChatLog_Filter = ChatBots.ChatLog.str2filter(argValue); break;
+                                                case "filter": ChatLog_Filter = ChatLog.str2filter(argValue); break;
                                                 case "logfile": ChatLog_File = argValue; break;
                                             }
                                             break;
@@ -527,10 +541,10 @@ namespace MinecraftClient
                                                     break;
                                                 case "type":
                                                     argValue = argValue.ToLower();
-                                                    if (argValue == "http") { proxyType = Proxy.ProxyHandler.Type.HTTP; }
-                                                    else if (argValue == "socks4") { proxyType = Proxy.ProxyHandler.Type.SOCKS4; }
-                                                    else if (argValue == "socks4a") { proxyType = Proxy.ProxyHandler.Type.SOCKS4a; }
-                                                    else if (argValue == "socks5") { proxyType = Proxy.ProxyHandler.Type.SOCKS5; }
+                                                    if (argValue == "http") { proxyType = ProxyHandler.Type.HTTP; }
+                                                    else if (argValue == "socks4") { proxyType = ProxyHandler.Type.SOCKS4; }
+                                                    else if (argValue == "socks4a") { proxyType = ProxyHandler.Type.SOCKS4a; }
+                                                    else if (argValue == "socks5") { proxyType = ProxyHandler.Type.SOCKS5; }
                                                     break;
                                                 case "server":
                                                     string[] host_splitted = argValue.Split(':');
@@ -738,11 +752,11 @@ namespace MinecraftClient
             accountAlias = accountAlias.ToLower();
             if (Accounts.ContainsKey(accountAlias))
             {
-                Settings.Login = Accounts[accountAlias].Key;
-                Settings.Password = Accounts[accountAlias].Value;
+                Login = Accounts[accountAlias].Key;
+                Password = Accounts[accountAlias].Value;
                 return true;
             }
-            else return false;
+            return false;
         }
 
         /// <summary>
@@ -775,7 +789,7 @@ namespace MinecraftClient
                 ServerPort = port;
                 return true;
             }
-            else if (Servers.ContainsKey(server))
+            if (Servers.ContainsKey(server))
             {
                 //Server Alias (if no dot then treat the server as an alias)
                 ServerIP = Servers[server].Key;
@@ -802,7 +816,7 @@ namespace MinecraftClient
                     AppVars[varName] = varData;
                     return true;
                 }
-                else return false;
+                return false;
             }
         }
 
@@ -826,13 +840,13 @@ namespace MinecraftClient
         /// <returns>Modifier string</returns>
         public static string ExpandVars(string str, Dictionary<string, object> localVars = null)
         {
-            StringBuilder result = new StringBuilder();
-            for (int i = 0; i < str.Length; i++)
+            var result = new StringBuilder();
+            for (var i = 0; i < str.Length; i++)
             {
                 if (str[i] == '%')
                 {
-                    bool varname_ok = false;
-                    StringBuilder var_name = new StringBuilder();
+                    var varname_ok = false;
+                    var var_name = new StringBuilder();
 
                     for (int j = i + 1; j < str.Length; j++)
                     {
@@ -842,12 +856,12 @@ namespace MinecraftClient
                                 varname_ok = var_name.Length > 0;
                             break;
                         }
-                        else var_name.Append(str[j]);
+                        var_name.Append(str[j]);
                     }
 
                     if (varname_ok)
                     {
-                        string varname = var_name.ToString();
+                        var varname = var_name.ToString();
                         string varname_lower = varname.ToLower();
                         i = i + varname.Length + 1;
 
@@ -860,11 +874,11 @@ namespace MinecraftClient
                             default:
                                 if (localVars != null && localVars.ContainsKey(varname_lower))
                                 {
-                                    result.Append(localVars[varname_lower].ToString());
+                                    result.Append(localVars[varname_lower]);
                                 }
                                 else if (AppVars.ContainsKey(varname_lower))
                                 {
-                                    result.Append(AppVars[varname_lower].ToString());
+                                    result.Append(AppVars[varname_lower]);
                                 }
                                 else result.Append("%" + varname + '%');
                                 break;

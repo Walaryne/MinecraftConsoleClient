@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Collections.Specialized;
-
+using System.Linq;
+using System.Text.RegularExpressions;
 namespace MinecraftClient.Protocol
 {
     class XboxLive
@@ -45,7 +43,7 @@ namespace MinecraftClient.Protocol
             //Console.WriteLine();
             //Console.WriteLine("urlPost: {0}", urlPost);
 
-            return new PreAuthResponse()
+            return new PreAuthResponse
             {
                 UrlPost = urlPost,
                 PPFT = PPFT,
@@ -102,26 +100,23 @@ namespace MinecraftClient.Protocol
                 //    Console.WriteLine("{0}: {1}", pair.Key, pair.Value);
                 //}
 
-                return new UserLoginResponse()
+                return new UserLoginResponse
                 {
                     AccessToken = dict["access_token"],
                     RefreshToken = dict["refresh_token"],
                     ExpiresIn = int.Parse(dict["expires_in"])
                 };
             }
-            else
+            if (twoFA.IsMatch(response.Body))
             {
-                if (twoFA.IsMatch(response.Body))
-                {
-                    // TODO: Handle 2FA
-                    throw new Exception("2FA enabled but not supported yet. Try to disable it in Microsoft account settings");
-                }
-                else if (invalidAccount.IsMatch(response.Body))
-                {
-                    throw new Exception("Invalid credentials. Check your credentials");
-                }
-                else throw new Exception("Unexpected response. Check your credentials. Response code: " + response.StatusCode);
+                // TODO: Handle 2FA
+                throw new Exception("2FA enabled but not supported yet. Try to disable it in Microsoft account settings");
             }
+            if (invalidAccount.IsMatch(response.Body))
+            {
+                throw new Exception("Invalid credentials. Check your credentials");
+            }
+            throw new Exception("Unexpected response. Check your credentials. Response code: " + response.StatusCode);
         }
 
         /// <summary>
@@ -158,16 +153,13 @@ namespace MinecraftClient.Protocol
                 Json.JSONData json = Json.ParseJson(jsonString);
                 string token = json.Properties["Token"].StringValue;
                 string userHash = json.Properties["DisplayClaims"].Properties["xui"].DataArray[0].Properties["uhs"].StringValue;
-                return new XblAuthenticateResponse()
+                return new XblAuthenticateResponse
                 {
                     Token = token,
                     UserHash = userHash
                 };
             }
-            else
-            {
-                throw new Exception("XBL Authentication failed");
-            }
+            throw new Exception("XBL Authentication failed");
         }
 
         /// <summary>
@@ -204,32 +196,26 @@ namespace MinecraftClient.Protocol
                 Json.JSONData json = Json.ParseJson(jsonString);
                 string token = json.Properties["Token"].StringValue;
                 string userHash = json.Properties["DisplayClaims"].Properties["xui"].DataArray[0].Properties["uhs"].StringValue;
-                return new XSTSAuthenticateResponse()
+                return new XSTSAuthenticateResponse
                 {
                     Token = token,
                     UserHash = userHash
                 };
             }
-            else
+            if (response.StatusCode == 401)
             {
-                if (response.StatusCode == 401)
+                Json.JSONData json = Json.ParseJson(response.Body);
+                if (json.Properties["XErr"].StringValue == "2148916233")
                 {
-                    Json.JSONData json = Json.ParseJson(response.Body);
-                    if (json.Properties["XErr"].StringValue == "2148916233")
-                    {
-                        throw new Exception("The account doesn't have an Xbox account");
-                    }
-                    else if (json.Properties["XErr"].StringValue == "2148916238")
-                    {
-                        throw new Exception("The account is a child (under 18) and cannot proceed unless the account is added to a Family by an adult");
-                    }
-                    else throw new Exception("Unknown XSTS error code: " + json.Properties["XErr"].StringValue);
+                    throw new Exception("The account doesn't have an Xbox account");
                 }
-                else
+                if (json.Properties["XErr"].StringValue == "2148916238")
                 {
-                    throw new Exception("XSTS Authentication failed");
+                    throw new Exception("The account is a child (under 18) and cannot proceed unless the account is added to a Family by an adult");
                 }
+                throw new Exception("Unknown XSTS error code: " + json.Properties["XErr"].StringValue);
             }
+            throw new Exception("XSTS Authentication failed");
         }
 
         public struct PreAuthResponse
@@ -323,7 +309,7 @@ namespace MinecraftClient.Protocol
 
             string jsonString = response.Body;
             Json.JSONData json = Json.ParseJson(jsonString);
-            return new UserProfile()
+            return new UserProfile
             {
                 UUID = json.Properties["id"].StringValue,
                 UserName = json.Properties["name"].StringValue

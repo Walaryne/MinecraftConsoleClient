@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
 namespace MinecraftClient.Mapping
 {
     /// <summary>
@@ -21,7 +19,7 @@ namespace MinecraftClient.Mapping
         /// <returns>Updated location after applying gravity</returns>
         public static Location HandleGravity(World world, Location location, ref double motionY)
         {
-            Location onFoots = new Location(location.X, Math.Floor(location.Y), location.Z);
+            var onFoots = new Location(location.X, Math.Floor(location.Y), location.Z);
             Location belowFoots = Move(location, Direction.Down);
             if (location.Y > Math.Truncate(location.Y) + 0.0001)
             {
@@ -48,7 +46,7 @@ namespace MinecraftClient.Mapping
         /// <returns>A list of new locations the player can move to</returns>
         public static IEnumerable<Location> GetAvailableMoves(World world, Location location, bool allowUnsafe = false)
         {
-            List<Location> availableMoves = new List<Location>();
+            var availableMoves = new List<Location>();
             if (IsOnGround(world, location) || IsSwimming(world, location))
             {
                 foreach (Direction dir in Enum.GetValues(typeof(Direction)))
@@ -87,7 +85,7 @@ namespace MinecraftClient.Mapping
             {
                 //Use MC-Like falling algorithm
                 double Y = start.Y;
-                Queue<Location> fallSteps = new Queue<Location>();
+                var fallSteps = new Queue<Location>();
                 fallSteps.Enqueue(start);
                 double motionPrev = motionY;
                 motionY -= 0.08D;
@@ -95,25 +93,22 @@ namespace MinecraftClient.Mapping
                 Y += motionY;
                 if (Y < goal.Y)
                     return new Queue<Location>(new[] { goal });
-                else return new Queue<Location>(new[] { new Location(start.X, Y, start.Z) });
+                return new Queue<Location>(new[] { new Location(start.X, Y, start.Z) });
             }
-            else
-            {
-                //Regular MCC moving algorithm
-                motionY = 0; //Reset motion speed
-                double totalStepsDouble = start.Distance(goal) * stepsByBlock;
-                int totalSteps = (int)Math.Ceiling(totalStepsDouble);
-                Location step = (goal - start) / totalSteps;
+            //Regular MCC moving algorithm
+            motionY = 0; //Reset motion speed
+            double totalStepsDouble = start.Distance(goal) * stepsByBlock;
+            var totalSteps = (int)Math.Ceiling(totalStepsDouble);
+            Location step = (goal - start) / totalSteps;
 
-                if (totalStepsDouble >= 1)
-                {
-                    Queue<Location> movementSteps = new Queue<Location>();
-                    for (int i = 1; i <= totalSteps; i++)
-                        movementSteps.Enqueue(start + step * i);
-                    return movementSteps;
-                }
-                else return new Queue<Location>(new[] { goal });
+            if (totalStepsDouble >= 1)
+            {
+                var movementSteps = new Queue<Location>();
+                for (var i = 1; i <= totalSteps; i++)
+                    movementSteps.Enqueue(start + step * i);
+                return movementSteps;
             }
+            return new Queue<Location>(new[] { goal });
         }
 
         /// <summary>
@@ -133,14 +128,14 @@ namespace MinecraftClient.Mapping
 
             AutoTimeout.Perform(() =>
             {
-                HashSet<Location> ClosedSet = new HashSet<Location>(); // The set of locations already evaluated.
-                HashSet<Location> OpenSet = new HashSet<Location>(new[] { start });  // The set of tentative nodes to be evaluated, initially containing the start node
-                Dictionary<Location, Location> Came_From = new Dictionary<Location, Location>(); // The map of navigated nodes.
+                var ClosedSet = new HashSet<Location>(); // The set of locations already evaluated.
+                var OpenSet = new HashSet<Location>(new[] { start });  // The set of tentative nodes to be evaluated, initially containing the start node
+                var Came_From = new Dictionary<Location, Location>(); // The map of navigated nodes.
 
-                Dictionary<Location, int> g_score = new Dictionary<Location, int>(); //:= map with default value of Infinity
+                var g_score = new Dictionary<Location, int>(); //:= map with default value of Infinity
                 g_score[start] = 0; // Cost from start along best known path.
                 // Estimated total cost from start to goal through y.
-                Dictionary<Location, int> f_score = new Dictionary<Location, int>(); //:= map with default value of Infinity
+                var f_score = new Dictionary<Location, int>(); //:= map with default value of Infinity
                 f_score[start] = (int)start.DistanceSquared(goal); //heuristic_cost_estimate(start, goal)
 
                 while (OpenSet.Count > 0)
@@ -152,7 +147,7 @@ namespace MinecraftClient.Mapping
                         .OrderBy(pair => pair.Value).First().Key;
                     if (current == goal)
                     { //reconstruct_path(Came_From, goal)
-                        List<Location> total_path = new List<Location>(new[] { current });
+                        var total_path = new List<Location>(new[] { current });
                         while (Came_From.ContainsKey(current))
                         {
                             current = Came_From[current];

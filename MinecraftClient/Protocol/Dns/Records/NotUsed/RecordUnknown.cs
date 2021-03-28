@@ -1,5 +1,3 @@
-using System;
-
 namespace Heijden.DNS
 {
 	public class RecordUnknown : Record

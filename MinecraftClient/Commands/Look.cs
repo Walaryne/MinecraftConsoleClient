@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MinecraftClient.Mapping;
-
 namespace MinecraftClient.Commands
 {
     public class Look : Command
@@ -35,7 +32,7 @@ namespace MinecraftClient.Commands
                     handler.UpdateLocation(handler.GetCurrentLocation(), direction);
                     return "Looking " + dirStr;
                 }
-                else if (args.Length == 2)
+                if (args.Length == 2)
                 {
                     try
                     {
@@ -47,7 +44,7 @@ namespace MinecraftClient.Commands
                     }
                     catch (FormatException) { return GetCmdDescTranslated(); }
                 }
-                else if (args.Length == 3)
+                if (args.Length == 3)
                 {
                     try
                     {
@@ -55,7 +52,7 @@ namespace MinecraftClient.Commands
                         int y = int.Parse(args[1]);
                         int z = int.Parse(args[2]);
 
-                        Location block = new Location(x, y, z);
+                        var block = new Location(x, y, z);
                         handler.UpdateLocation(handler.GetCurrentLocation(), block);
 
                         return Translations.Get("cmd.look.block", block);
@@ -63,9 +60,9 @@ namespace MinecraftClient.Commands
                     catch (FormatException) { return CmdUsage; }
                     
                 }
-                else return GetCmdDescTranslated();
+                return GetCmdDescTranslated();
             }
-            else return Translations.Get("extra.terrainandmovement_required");
+            return Translations.Get("extra.terrainandmovement_required");
         }
     }
 }

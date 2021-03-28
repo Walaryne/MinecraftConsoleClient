@@ -27,6 +27,7 @@
 
 
 using System;
+using System.IO;
 using Interop = System.Runtime.InteropServices;
 
 namespace Ionic.Crc
@@ -43,9 +44,9 @@ namespace Ionic.Crc
     /// </remarks>
 
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000C")]
-    [Interop.ComVisible(true)]
+    [Interop.ComVisibleAttribute(true)]
 #if !NETCF
-    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+    [Interop.ClassInterfaceAttribute(Interop.ClassInterfaceType.AutoDispatch)]
 #endif
     public class CRC32
     {
@@ -76,7 +77,7 @@ namespace Ionic.Crc
         /// </summary>
         /// <param name="input">The stream over which to calculate the CRC32</param>
         /// <returns>the CRC32 calculation</returns>
-        public Int32 GetCrc32(System.IO.Stream input)
+        public Int32 GetCrc32(Stream input)
         {
             return GetCrc32AndCopy(input, null);
         }
@@ -88,14 +89,14 @@ namespace Ionic.Crc
         /// <param name="input">The stream over which to calculate the CRC32</param>
         /// <param name="output">The stream into which to deflate the input</param>
         /// <returns>the CRC32 calculation</returns>
-        public Int32 GetCrc32AndCopy(System.IO.Stream input, System.IO.Stream output)
+        public Int32 GetCrc32AndCopy(Stream input, Stream output)
         {
             if (input == null)
                 throw new Exception("The input stream must not be null.");
 
             unchecked
             {
-                byte[] buffer = new byte[BUFFER_SIZE];
+                var buffer = new byte[BUFFER_SIZE];
                 int readSize = BUFFER_SIZE;
 
                 _TotalBytesRead = 0;
@@ -146,11 +147,11 @@ namespace Ionic.Crc
                 throw new Exception("The data buffer must not be null.");
 
             // bzip algorithm
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 int x = offset + i;
                 byte b = block[x];
-                if (this.reverseBits)
+                if (reverseBits)
                 {
                     UInt32 temp = (_register >> 24) ^ b;
                     _register = (_register << 8) ^ crc32Table[temp];
@@ -171,7 +172,7 @@ namespace Ionic.Crc
         /// <param name = "b">the byte to include into the CRC .  </param>
         public void UpdateCRC(byte b)
         {
-            if (this.reverseBits)
+            if (reverseBits)
             {
                 UInt32 temp = (_register >> 24) ^ b;
                 _register = (_register << 8) ^ crc32Table[temp];
@@ -201,7 +202,7 @@ namespace Ionic.Crc
         {
             while (n-- > 0)
             {
-                if (this.reverseBits)
+                if (reverseBits)
                 {
                     uint temp = (_register >> 24) ^ b;
                     _register = (_register << 8) ^ crc32Table[(temp >= 0)
@@ -302,7 +303,7 @@ namespace Ionic.Crc
         private uint gf2_matrix_times(uint[] matrix, uint vec)
         {
             uint sum = 0;
-            int i=0;
+            var i=0;
             while (vec != 0)
             {
                 if ((vec & 0x01)== 0x01)
@@ -315,7 +316,7 @@ namespace Ionic.Crc
 
         private void gf2_matrix_square(uint[] square, uint[] mat)
         {
-            for (int i = 0; i < 32; i++)
+            for (var i = 0; i < 32; i++)
                 square[i] = gf2_matrix_times(mat, mat[i]);
         }
 
@@ -334,19 +335,19 @@ namespace Ionic.Crc
         /// <param name="length">the length of data the CRC value was calculated on</param>
         public void Combine(int crc, int length)
         {
-            uint[] even = new uint[32];     // even-power-of-two zeros operator
-            uint[] odd = new uint[32];      // odd-power-of-two zeros operator
+            var even = new uint[32];     // even-power-of-two zeros operator
+            var odd = new uint[32];      // odd-power-of-two zeros operator
 
             if (length == 0)
                 return;
 
             uint crc1= ~_register;
-            uint crc2= (uint) crc;
+            var crc2= (uint) crc;
 
             // put operator for one zero bit in odd
-            odd[0] = this.dwPolynomial;  // the CRC-32 polynomial
+            odd[0] = dwPolynomial;  // the CRC-32 polynomial
             uint row = 1;
-            for (int i = 1; i < 32; i++)
+            for (var i = 1; i < 32; i++)
             {
                 odd[i] = row;
                 row <<= 1;
@@ -358,7 +359,7 @@ namespace Ionic.Crc
             // put operator for four zero bits in odd
             gf2_matrix_square(odd, even);
 
-            uint len2 = (uint) length;
+            var len2 = (uint) length;
 
             // apply len2 zeros to crc1 (first square will put the operator for one
             // zero byte, eight zero bits, in even)
@@ -387,7 +388,6 @@ namespace Ionic.Crc
             _register= ~crc1;
 
             //return (int) crc1;
-            return;
         }
 
 
@@ -449,8 +449,8 @@ namespace Ionic.Crc
         public CRC32(int polynomial, bool reverseBits)
         {
             this.reverseBits = reverseBits;
-            this.dwPolynomial = (uint) polynomial;
-            this.GenerateLookupTable();
+            dwPolynomial = (uint) polynomial;
+            GenerateLookupTable();
         }
 
         /// <summary>
@@ -496,11 +496,11 @@ namespace Ionic.Crc
     /// DotNetZip library.
     /// </para>
     /// </remarks>
-    public class CrcCalculatorStream : System.IO.Stream, System.IDisposable
+    public class CrcCalculatorStream : Stream, IDisposable
     {
         private static readonly Int64 UnsetLengthLimit = -99;
 
-        internal System.IO.Stream _innerStream;
+        internal Stream _innerStream;
         private CRC32 _Crc32;
         private Int64 _lengthLimit = -99;
         private bool _leaveOpen;
@@ -516,8 +516,8 @@ namespace Ionic.Crc
         ///   </para>
         /// </remarks>
         /// <param name="stream">The underlying stream</param>
-        public CrcCalculatorStream(System.IO.Stream stream)
-            : this(true, CrcCalculatorStream.UnsetLengthLimit, stream, null)
+        public CrcCalculatorStream(Stream stream)
+            : this(true, UnsetLengthLimit, stream, null)
         {
         }
 
@@ -534,8 +534,8 @@ namespace Ionic.Crc
         /// <param name="stream">The underlying stream</param>
         /// <param name="leaveOpen">true to leave the underlying stream
         /// open upon close of the <c>CrcCalculatorStream</c>; false otherwise.</param>
-        public CrcCalculatorStream(System.IO.Stream stream, bool leaveOpen)
-            : this(leaveOpen, CrcCalculatorStream.UnsetLengthLimit, stream, null)
+        public CrcCalculatorStream(Stream stream, bool leaveOpen)
+            : this(leaveOpen, UnsetLengthLimit, stream, null)
         {
         }
 
@@ -555,7 +555,7 @@ namespace Ionic.Crc
         /// </remarks>
         /// <param name="stream">The underlying stream</param>
         /// <param name="length">The length of the stream to slurp</param>
-        public CrcCalculatorStream(System.IO.Stream stream, Int64 length)
+        public CrcCalculatorStream(Stream stream, Int64 length)
             : this(true, length, stream, null)
         {
             if (length < 0)
@@ -577,7 +577,7 @@ namespace Ionic.Crc
         /// <param name="length">The length of the stream to slurp</param>
         /// <param name="leaveOpen">true to leave the underlying stream
         /// open upon close of the <c>CrcCalculatorStream</c>; false otherwise.</param>
-        public CrcCalculatorStream(System.IO.Stream stream, Int64 length, bool leaveOpen)
+        public CrcCalculatorStream(Stream stream, Int64 length, bool leaveOpen)
             : this(leaveOpen, length, stream, null)
         {
             if (length < 0)
@@ -600,7 +600,7 @@ namespace Ionic.Crc
         /// <param name="leaveOpen">true to leave the underlying stream
         /// open upon close of the <c>CrcCalculatorStream</c>; false otherwise.</param>
         /// <param name="crc32">the CRC32 instance to use to calculate the CRC32</param>
-        public CrcCalculatorStream(System.IO.Stream stream, Int64 length, bool leaveOpen,
+        public CrcCalculatorStream(Stream stream, Int64 length, bool leaveOpen,
                                    CRC32 crc32)
             : this(leaveOpen, length, stream, crc32)
         {
@@ -615,8 +615,7 @@ namespace Ionic.Crc
         // explicit param, otherwise we don't validate, because it could be our special
         // value.
         private CrcCalculatorStream
-            (bool leaveOpen, Int64 length, System.IO.Stream stream, CRC32 crc32)
-            : base()
+            (bool leaveOpen, Int64 length, Stream stream, CRC32 crc32)
         {
             _innerStream = stream;
             _Crc32 = crc32 ?? new CRC32();
@@ -687,7 +686,7 @@ namespace Ionic.Crc
             // calling ReadToEnd() on it, We can "over-read" the zip data and get a
             // corrupt string.  The length limits that, prevents that problem.
 
-            if (_lengthLimit != CrcCalculatorStream.UnsetLengthLimit)
+            if (_lengthLimit != UnsetLengthLimit)
             {
                 if (_Crc32.TotalBytesRead >= _lengthLimit) return 0; // EOF
                 Int64 bytesRemaining = _lengthLimit - _Crc32.TotalBytesRead;
@@ -754,9 +753,9 @@ namespace Ionic.Crc
         {
             get
             {
-                if (_lengthLimit == CrcCalculatorStream.UnsetLengthLimit)
+                if (_lengthLimit == UnsetLengthLimit)
                     return _innerStream.Length;
-                else return _lengthLimit;
+                return _lengthLimit;
             }
         }
 
@@ -778,7 +777,7 @@ namespace Ionic.Crc
         /// <param name="offset">N/A</param>
         /// <param name="origin">N/A</param>
         /// <returns>N/A</returns>
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotSupportedException();
         }
